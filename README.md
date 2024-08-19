@@ -4,15 +4,15 @@
 
 # Autores
 
-## Pedro Marques Correa Domingues
+### Pedro Marques Correa Domingues
 
-## Pedro Lucas Franco
+### Pedro Lucas Franco
 
-## Victor Hugo de Deus Machado
+### Victor Hugo de Deus Machado
 
-## Pedro Antônio de Souza Rezende 
+### Pedro Antônio de Souza Rezende 
 
-## Lucas Pomini Galli
+### Lucas Pomini Galli
 
-## Raphael Camurri Michelassi 
+### Raphael Camurri Michelassi 
 
