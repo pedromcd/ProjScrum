@@ -1,8 +1,10 @@
 # ProjScrum
 
-# Descrição
+## Descrição
 
-# Autores
+Projeto a ser desenvolvido com intuito de utilizarmos os conhecimentos e tecnologias passadas na disciplina de Engenharia de Software Aplicada na Universidade Unisagrado
+
+## Autores
 
 ### Pedro Marques Correa Domingues
 
