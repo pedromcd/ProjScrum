@@ -13,7 +13,7 @@ Projeto a ser desenvolvido com intuito de utilizarmos os conhecimentos e tecnolo
 ### Victor Hugo de Deus Machado
 
 ### Pedro Antônio de Souza Rezende 
-
+    viado
 ### Lucas Pomini Galli
 
 ### Raphael Camurri Michelassi 
