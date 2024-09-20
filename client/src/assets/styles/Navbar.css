@@ -1,0 +1,67 @@
+.navbar {
+  min-height: 100vh;
+  min-width: 160px;
+  width: 160;
+  position: fixed;
+  top: 59px;
+  left: 0;
+  bottom: 0;
+  z-index: 200;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 10px 5px 5px -9px black;
+  transition: 0.15s;
+  background: #e4e5f1;
+}
+
+.fa-bars {  
+  display: flex;
+  position: absolute;
+  top: 40px;
+  left: 60px;
+  z-index: 10;
+  font-size: 40px;
+  cursor: pointer;
+}
+
+.list-navbar {
+  padding-top: 25px;
+  margin-top: 200px;
+  margin-left: -12px;
+  width: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+  flex-direction: column;
+  padding-left: 20px;
+  list-style: none;
+}
+
+.list-navbar li {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+  align-items: center;
+  cursor: pointer;
+}
+
+.icon-wrapper-navbar {
+  font-size: 23px;
+  margin-right: 13px;
+}
+
+.button-to-dark-mode {
+  font-size: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  bottom: 150px;
+  left: 60px;
+  cursor: pointer;
+}
+
+.dark .navbar {
+  background: #191919;
+  color: #e9eaf5;
+}

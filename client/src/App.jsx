@@ -1,3 +1,11 @@
+import React from 'react';
+import './assets/styles/index.css';
+import Home from './pages/Home';
+
 export default function App() {
-  return "Hello World!"
+  return (
+    <div>
+      <Home />
+    </div>
+  );
 }
