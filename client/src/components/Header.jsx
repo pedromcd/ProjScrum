@@ -1,12 +1,16 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBell } from '@fortawesome/free-solid-svg-icons/faBell';
+import { faBell, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@mui/material';
 import '../assets/styles/Header.css';
 
-const Header = () => {
+const Header = ({ toggleNavbar }) => {
   return (
     <header className='header'>
+      <span className='menu-button'>
+        <FontAwesomeIcon icon={faBars} onClick={toggleNavbar} />
+      </span>
+
       <ul className='current-page'>
         <li>Projetos</li>
       </ul>

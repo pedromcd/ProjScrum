@@ -5,6 +5,11 @@ import Header from '../components/Header';
 function Home() {
   const current_theme = localStorage.getItem('current_theme');
   const [theme, setTheme] = useState(current_theme ? current_theme : 'light');
+  const [isNavbarVisible, setNavbarVisible] = useState(true);
+
+  const toggleNavbar = () => {
+    setNavbarVisible(!isNavbarVisible);
+  };
 
   useEffect(() => {
     localStorage.setItem('current_theme', theme);
@@ -12,8 +17,8 @@ function Home() {
 
   return (
     <div className={`container ${theme}`}>
-      <Header />
-      <Navbar theme={theme} setTheme={setTheme} />
+      <Header toggleNavbar={toggleNavbar} />
+      <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
     </div>
   );
 }

@@ -1,8 +1,10 @@
 * {
   margin: 0;
   padding: 0;
+  border: none;
+  outline: none;
   box-sizing: border-box;
-  font-family: "DM Sans", "Roboto", "Poppins";
+  font-family: "DM Sans", "Roboto", "Poppins", sans-serif;
 }
 
 .container {
