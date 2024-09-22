@@ -22,6 +22,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     setProjectMembers,
     handleCreateProject,
     projectCards,
+    isFormValid,
   } = useProjectCreation();
 
   const handleCreateProjectAndCloseModal = () => {
@@ -106,7 +107,11 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
               />
             </li>
           </ul>
-          <button className='create-project' onClick={handleCreateProjectAndCloseModal}>
+          <button
+            className='create-project'
+            onClick={handleCreateProjectAndCloseModal}
+            disabled={!isFormValid}
+          >
             Criar
           </button>
         </div>

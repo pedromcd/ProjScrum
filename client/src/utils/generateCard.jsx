@@ -1,6 +1,5 @@
 import { useState } from 'react';
 
-// Custom hook to manage project creation logic
 export const useProjectCreation = () => {
   const [projectName, setProjectName] = useState('');
   const [projectDesc, setProjectDesc] = useState('');
@@ -17,7 +16,10 @@ export const useProjectCreation = () => {
   });
 
   const handleCreateProject = () => {
-    // Generate a new project card
+    if (!projectName || !projectDesc || !deliveryDate || !projectMembers) {
+      return;
+    }
+
     const newProjectCard = (
       <div className='project-cards' key={Date.now()}>
         <h1>{projectName}</h1>
@@ -26,15 +28,15 @@ export const useProjectCreation = () => {
       </div>
     );
 
-    // Add the new project card to the list of project cards
     setProjectCards((prevProjectCards) => [...prevProjectCards, newProjectCard]);
 
-    // Clear the input fields
     setProjectName('');
     setProjectDesc('');
     setDeliveryDate('');
     setProjectMembers('');
   };
+
+  const isFormValid = projectName && projectDesc && deliveryDate && projectMembers;
 
   return {
     projectName,
@@ -47,5 +49,6 @@ export const useProjectCreation = () => {
     setProjectMembers,
     handleCreateProject,
     projectCards,
+    isFormValid,
   };
 };

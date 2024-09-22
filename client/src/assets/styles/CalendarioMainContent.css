@@ -1,0 +1,12 @@
+.main-content {
+  display: flex;
+  flex-direction: column;
+  margin-left: 160px;
+  margin-top: 70px;
+  padding: 20px;
+  transition: margin-left 0.15s ease;
+}
+
+.main-content.full-width {
+  margin-left: 0;
+}

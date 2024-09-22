@@ -14,12 +14,21 @@
   background: #e4e5f1;
 }
 
+.link {
+  color: black;
+  text-decoration: none;
+}
+
+.link:hover {
+  transform: scale(1.05);
+}
+
 .navbar.collapsed {
   width: 0px;
   transition: 0.2;
 }
 
-.fa-bars {  
+.fa-bars {
   display: flex;
   position: absolute;
   top: 40px;
@@ -40,6 +49,7 @@
   flex-direction: column;
   padding-left: 20px;
   list-style: none;
+  z-index: 2;
 }
 
 .list-navbar li {
@@ -68,5 +78,9 @@
 
 .dark .navbar {
   background: #191919;
+  color: #e9eaf5;
+}
+
+.dark .link {
   color: #e9eaf5;
 }

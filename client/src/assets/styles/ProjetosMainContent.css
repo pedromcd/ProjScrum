@@ -61,7 +61,7 @@ input {
 
 /* Carousel container */
 .project-cards-container {
-  margin-top: 20px;
+  margin-top: 12px;
   padding: 10px;
   overflow: visible;
   height: 510px;
@@ -103,8 +103,6 @@ input {
   padding-bottom: 20px;
 }
 
-
-/* Styling for the project cards */
 .project-card {
   background-color: #e4e5f1;
   border-radius: 10px;
@@ -125,7 +123,7 @@ input {
   z-index: 500;
 }
 
-.project-card>* {
+.project-card > * {
   flex: 1;
 }
 
