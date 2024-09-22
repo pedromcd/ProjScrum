@@ -31,7 +31,7 @@
 
 .list-navbar {
   padding-top: 25px;
-  margin-top: 200px;
+  margin-top: 150px;
   margin-left: -12px;
   width: auto;
   display: flex;
@@ -45,7 +45,7 @@
 .list-navbar li {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 30px;
+  margin-bottom: 50px;
   align-items: center;
   cursor: pointer;
 }

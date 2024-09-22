@@ -1,0 +1,192 @@
+.main-content {
+  display: flex;
+  flex-direction: column;
+  margin-left: 160px;
+  margin-top: 70px;
+  padding: 20px;
+  transition: margin-left 0.15s ease;
+}
+
+.main-content.full-width {
+  margin-left: 0;
+}
+
+.create-project-button {
+  display: inline-block;
+  background-color: #e4e5f1;
+  border-radius: 5px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  font-size: 25px;
+  padding: 3px 7px;
+  margin-top: 15px;
+  margin-left: auto;
+  margin-right: 50px;
+  margin-bottom: 20px;
+  transition: 0.15s;
+  cursor: pointer;
+}
+
+.plus-icon {
+  margin-right: 15px;
+}
+
+.project-inputs {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  top: -120px;
+  left: -20px;
+}
+
+.project-inputs li {
+  margin-bottom: 35px;
+}
+
+input {
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  border-radius: 6px;
+  height: 20px;
+  padding: 10px;
+}
+
+.create-project {
+  position: fixed;
+  bottom: 60px;
+  border-radius: 6px;
+  right: 35.5%;
+  padding: 10px 50px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  cursor: pointer;
+}
+
+/* Carousel container */
+.project-cards-container {
+  margin-top: 20px;
+  padding: 10px;
+  overflow: visible;
+  height: 510px;
+}
+
+.slick-slider .slick-prev:before {
+  color: black !important;
+}
+
+.slick-slider .slick-next:before {
+  color: black !important;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  font-size: 30px !important;
+}
+
+.slick-prev {
+  right: 1px !important;
+}
+
+.slick-next {
+  right: 1px !important;
+}
+
+.main-content .slick-dots {
+  li {
+    button:before {
+      top: 20px;
+    }
+  }
+}
+
+.main-content .slick-slide {
+  border: none;
+  box-shadow: none;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+
+/* Styling for the project cards */
+.project-card {
+  background-color: #e4e5f1;
+  border-radius: 10px;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  transition: transform 0.15s ease;
+  cursor: pointer;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  height: 400px;
+  width: 100%;
+  max-width: 350px;
+  margin: 0 35px;
+  z-index: 500;
+}
+
+.project-card>* {
+  flex: 1;
+}
+
+.project-card h1,
+.project-card h2,
+.project-card h3 {
+  text-align: center;
+  padding-bottom: 50px;
+  margin: 10px 0;
+}
+
+.project-card h1 {
+  font-size: 24px;
+}
+
+.project-card h2 {
+  font-size: 18px;
+}
+
+.project-card h3 {
+  font-size: 16px;
+}
+
+.project-card:hover {
+  transform: scale(1.05);
+}
+
+/* Dark mode styles */
+.dark .main-content .create-project-button {
+  background: #191919;
+  color: #e9eaf5;
+  box-shadow: 1px 1px 5px black;
+}
+
+.dark .main-content input {
+  box-shadow: none;
+  border: 1px solid black;
+}
+
+.dark .main-content .project-card {
+  background: #191919;
+  color: #e9eaf5;
+}
+
+.dark .slick-slider .slick-prev:before {
+  color: #e4e5f1 !important;
+}
+
+.dark .slick-slider .slick-next:before {
+  color: #e4e5f1 !important;
+}
+
+.dark .slick-dots {
+  li {
+    button:before {
+      color: white !important;
+      top: 20px;
+    }
+  }
+}
+
+.dark .slick-slider .slick-dots .slick-active {
+  color: white !important;
+}

@@ -4,16 +4,17 @@
   border: none;
   outline: none;
   box-sizing: border-box;
+  list-style: none;
   font-family: "DM Sans", "Roboto", "Poppins", sans-serif;
 }
 
 .container {
   height: 100vh;
   min-width: 100vh;
-  background: #fafafa;
-  transition: 0.3s;
+  background: #f4f3f3;
+  transition: 0.15s;
 }
 
 .container.dark {
-  background: #222;
+  background: #262626;
 }

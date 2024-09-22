@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/NavBar';
 import Header from '../components/Header';
+import ProjetosMainContent from '../components/ProjetosMainContent';
 
 function Home() {
   const current_theme = localStorage.getItem('current_theme');
@@ -19,6 +20,7 @@ function Home() {
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} />
       <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
+      <ProjetosMainContent isNavbarVisible={isNavbarVisible} />
     </div>
   );
 }
