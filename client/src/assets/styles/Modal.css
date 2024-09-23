@@ -16,13 +16,13 @@
   left: 50%;
   transform: translate(-50%, -50%);
   padding: 150px 100px 0px 125px;
-  background-color: #e4e5f1;
+  background-color: #eff0f9;
   border-radius: 10px;
   box-shadow: 1px 1px 5px rgb(61, 61, 61);
 }
 
 .dark .modal-container {
-  background: #191919;
-  color: #e9eaf5;
+  background: #273142;
+  color: #ffffff;
   box-shadow: 1px 1px 5px black;
 }

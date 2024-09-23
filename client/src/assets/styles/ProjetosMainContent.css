@@ -1,19 +1,19 @@
-.main-content {
+.projects-main-content {
   display: flex;
   flex-direction: column;
   margin-left: 160px;
   margin-top: 70px;
   padding: 20px;
-  transition: margin-left 0.15s ease;
+  transition: 0.15s;
 }
 
-.main-content.full-width {
+.projects-main-content.full-width {
   margin-left: 0;
 }
 
 .create-project-button {
   display: inline-block;
-  background-color: #e4e5f1;
+  background-color: #eff0f9;
   border-radius: 5px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   font-size: 25px;
@@ -88,7 +88,7 @@ input {
   right: 1px !important;
 }
 
-.main-content .slick-dots {
+.projects-main-content .slick-dots {
   li {
     button:before {
       top: 20px;
@@ -96,7 +96,7 @@ input {
   }
 }
 
-.main-content .slick-slide {
+.projects-main-content .slick-slide {
   border: none;
   box-shadow: none;
   padding-top: 20px;
@@ -120,11 +120,6 @@ input {
   width: 100%;
   max-width: 350px;
   margin: 0 35px;
-  z-index: 500;
-}
-
-.project-card > * {
-  flex: 1;
 }
 
 .project-card h1,
@@ -152,28 +147,29 @@ input {
 }
 
 /* Dark mode styles */
-.dark .main-content .create-project-button {
-  background: #191919;
-  color: #e9eaf5;
+.dark .projects-main-content .create-project-button {
+  background: #273142;
+  color: #ffffff;
   box-shadow: 1px 1px 5px black;
 }
 
-.dark .main-content input {
+.dark .projects-main-content input {
   box-shadow: none;
   border: 1px solid black;
 }
 
-.dark .main-content .project-card {
-  background: #191919;
-  color: #e9eaf5;
+.dark .projects-main-content .project-card {
+  background: #273142;
+  color: #ffffff;
+  box-shadow: 1px 1px 5px rgb(0, 0, 0);
 }
 
 .dark .slick-slider .slick-prev:before {
-  color: #e4e5f1 !important;
+  color: #ffffff !important;
 }
 
 .dark .slick-slider .slick-next:before {
-  color: #e4e5f1 !important;
+  color: #ffffff !important;
 }
 
 .dark .slick-dots {

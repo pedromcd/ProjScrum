@@ -7,6 +7,7 @@ import { useProjectCreation } from '../utils/generateCard';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
@@ -64,7 +65,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
   };
 
   return (
-    <div className={`main-content ${isNavbarVisible ? '' : 'full-width'}`}>
+    <div className={`projects-main-content ${isNavbarVisible ? '' : 'full-width'}`}>
       <button className='create-project-button' onClick={() => setOpenModal(true)}>
         <span className='plus-icon'>
           <FontAwesomeIcon icon={faPlus} />
@@ -119,7 +120,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
       {projectCards.length > 0 && (
         <div className='project-cards-container'>
-          <Slider {...settings}>
+          <Slider {...settings} prevArrow={<CustomPrevArrow />} nextArrow={<CustomNextArrow />}>
             {projectCards.map((card, index) => (
               <div key={index} className='project-card'>
                 {card}

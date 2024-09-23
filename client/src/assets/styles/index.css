@@ -6,16 +6,15 @@
   box-sizing: border-box;
   list-style: none;
   font-family: 'DM Sans', 'Roboto', 'Poppins', sans-serif;
-  transition: 0.15s;
 }
 
 .container {
   height: 100vh;
   min-width: 100vh;
-  background: #f4f3f3;
+  background: #d4d7e6;
   transition: 0.15s;
 }
 
 .container.dark {
-  background: #262626;
+  background: #1b2431;
 }

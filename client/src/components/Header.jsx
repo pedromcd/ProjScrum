@@ -3,8 +3,19 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@mui/material';
 import '../assets/styles/Header.css';
+import { useLocation } from 'react-router-dom';
+
+const pageNameMapping = {
+  '/': 'Meus Projetos',
+  '/calendar': 'Calendário',
+  '/history': 'Histórico',
+  '/settings': 'Configurações da Conta',
+};
 
 const Header = ({ toggleNavbar }) => {
+  const location = useLocation();
+  const currentPageName = pageNameMapping[location.pathname];
+
   return (
     <header className='header'>
       <span className='menu-button'>
@@ -12,7 +23,7 @@ const Header = ({ toggleNavbar }) => {
       </span>
 
       <ul className='current-page'>
-        <li>Projetos</li>
+        <li>{currentPageName}</li>
       </ul>
 
       <div className='user-details'>

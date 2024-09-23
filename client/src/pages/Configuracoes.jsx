@@ -1,16 +1,14 @@
 import React from 'react';
 import Navbar from '../components/NavBar';
 import Header from '../components/Header';
-import CalendarioMainContent from '../components/CalendarioMainContent';
 
-function Calendario({ theme, setTheme, isNavbarVisible, toggleNavbar }) {
+function Configuracoes({ theme, setTheme, isNavbarVisible, toggleNavbar }) {
   return (
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} />
       <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
-      <CalendarioMainContent isNavbarVisible={isNavbarVisible} />
     </div>
   );
 }
 
-export default Calendario;
+export default Configuracoes;

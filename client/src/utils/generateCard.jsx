@@ -5,7 +5,7 @@ export const useProjectCreation = () => {
   const [projectDesc, setProjectDesc] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [projectMembers, setProjectMembers] = useState('');
-  const [projectCards, setProjectCards] = useState([]);
+  const [projectCards, setProjectCards] = useState(JSON.parse(localStorage.getItem('projects') || '[]'));
 
   const [year, month, day] = deliveryDate.split('-');
   const date = new Date(Number(year), Number(month) - 1, Number(day));
@@ -20,15 +20,18 @@ export const useProjectCreation = () => {
       return;
     }
 
-    const newProjectCard = (
-      <div className='project-cards' key={Date.now()}>
-        <h1>{projectName}</h1>
-        <h2>{projectDesc}</h2>
-        <h3>Data de entrega: {formattedDate}</h3>
-      </div>
-    );
+    const newProject = {
+      projectName,
+      projectDesc,
+      deliveryDate: formattedDate,
+      projectMembers,
+    };
 
-    setProjectCards((prevProjectCards) => [...prevProjectCards, newProjectCard]);
+    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    storedProjects.push(newProject);
+    localStorage.setItem('projects', JSON.stringify(storedProjects));
+
+    setProjectCards((prevProjectCards) => [...prevProjectCards, newProject]);
 
     setProjectName('');
     setProjectDesc('');
@@ -48,7 +51,13 @@ export const useProjectCreation = () => {
     projectMembers,
     setProjectMembers,
     handleCreateProject,
-    projectCards,
+    projectCards: projectCards.map((project) => (
+      <div className='project-cards' key={project.projectName}>
+        <h1>{project.projectName}</h1>
+        <h2>{project.projectDesc}</h2>
+        <h3>Data de entrega: {project.deliveryDate}</h3>
+      </div>
+    )),
     isFormValid,
   };
 };
