@@ -21,13 +21,9 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar }) => 
     }
   }, [projectName]);
 
-  if (!project) {
-    return <div>No project found</div>;
-  }
-
   return (
     <div className={`container ${theme}`}>
-      <Header toggleNavbar={toggleNavbar} />
+      <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
       <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
       <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} />
     </div>

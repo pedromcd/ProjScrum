@@ -16,7 +16,7 @@ const pageNameMapping = {
   '/settings': 'Configurações da Conta',
 };
 
-const Header = ({ toggleNavbar }) => {
+const Header = ({ toggleNavbar, isNavbarVisible }) => {
   const location = useLocation();
 
   const [projectNames, setProjectNames] = useState([]);
@@ -32,14 +32,14 @@ const Header = ({ toggleNavbar }) => {
   if (!currentPageName && location.pathname !== '/') {
     const projectName = decodeURIComponent(location.pathname.substring(1));
     if (projectNames.includes(projectName)) {
-      currentPageName = `Projeto: ${projectName}`;
+      currentPageName = `${projectName}`;
     } else {
       currentPageName = 'Projeto Inválido';
     }
   }
 
   return (
-    <header className='header'>
+    <header className={`header ${isNavbarVisible ? '' : 'full-width'}`}>
       <span className='menu-button'>
         <FontAwesomeIcon icon={faBars} onClick={toggleNavbar} />
       </span>

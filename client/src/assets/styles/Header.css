@@ -10,11 +10,16 @@
   top: 0;
   left: 0;
   right: 0;
-  box-shadow: 0px 1px 5px black;
+  box-shadow: 161.5px 1px 5px black;
   transition: 0.15s;
   font-size: 16px;
   font-weight: 500;
   background: #eff0f9;
+  transition: 0.15s;
+}
+
+.header.full-width {
+  box-shadow: 0px 1px 5px black;
 }
 
 .user-details {

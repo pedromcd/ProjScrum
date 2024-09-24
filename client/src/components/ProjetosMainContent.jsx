@@ -66,7 +66,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
   return (
     <div className={`projects-main-content ${isNavbarVisible ? '' : 'full-width'}`}>
-      <button className='create-project-button' onClick={() => setOpenModal(true)}>
+      <button className='create-button' onClick={() => setOpenModal(true)}>
         <span className='plus-icon'>
           <FontAwesomeIcon icon={faPlus} />
         </span>

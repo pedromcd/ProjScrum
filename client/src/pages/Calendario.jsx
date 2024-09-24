@@ -6,7 +6,7 @@ import CalendarioMainContent from '../components/CalendarioMainContent';
 function Calendario({ theme, setTheme, isNavbarVisible, toggleNavbar }) {
   return (
     <div className={`container ${theme}`}>
-      <Header toggleNavbar={toggleNavbar} />
+      <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
       <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
       <CalendarioMainContent isNavbarVisible={isNavbarVisible} />
     </div>

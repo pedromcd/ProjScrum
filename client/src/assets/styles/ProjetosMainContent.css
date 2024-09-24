@@ -11,17 +11,17 @@
   margin-left: 0;
 }
 
-.create-project-button {
+.create-button {
   display: inline-block;
   background-color: #eff0f9;
   border-radius: 5px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   font-size: 25px;
   padding: 3px 7px;
-  margin-top: 15px;
-  margin-left: auto;
-  margin-right: 50px;
-  margin-bottom: 20px;
+  margin-top: -5px;
+  width: 200px;
+  margin-bottom: 35px;
+  align-self: flex-end;
   transition: 0.15s;
   cursor: pointer;
 }
@@ -47,6 +47,7 @@ input {
   border-radius: 6px;
   height: 20px;
   padding: 10px;
+  width: 250px;
 }
 
 .create-project {
@@ -147,7 +148,7 @@ input {
 }
 
 /* Dark mode styles */
-.dark .projects-main-content .create-project-button {
+.dark .projects-main-content .create-button {
   background: #273142;
   color: #ffffff;
   box-shadow: 1px 1px 5px black;
