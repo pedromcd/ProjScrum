@@ -15,6 +15,11 @@
   transition: 0.15s;
 }
 
+.link {
+  color: black;
+  text-decoration: none;
+}
+
 .container.dark {
   background: #1b2431;
 }

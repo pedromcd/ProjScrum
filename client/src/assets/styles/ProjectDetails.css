@@ -1,0 +1,12 @@
+.project-details-container {
+  display: flex;
+  flex-direction: column;
+  margin-left: 160px;
+  margin-top: 70px;
+  padding: 20px;
+  transition: 0.15s;
+}
+
+.project-details-container.full-width {
+  margin-left: 0;
+}

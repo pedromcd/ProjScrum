@@ -5,6 +5,7 @@ import Home from './pages/Home';
 import Calendario from './pages/Calendario';
 import Historico from './pages/Historico';
 import Configuracoes from './pages/Configuracoes.jsx';
+import DetalhesProjeto from './pages/DetalhesProjeto.jsx';
 
 export default function App() {
   const current_theme = localStorage.getItem('current_theme');
@@ -63,6 +64,18 @@ export default function App() {
           exact
           Component={() => (
             <Configuracoes
+              theme={theme}
+              setTheme={setTheme}
+              isNavbarVisible={isNavbarVisible}
+              toggleNavbar={toggleNavbar}
+            />
+          )}
+        />
+        <Route
+          path='/:projectName'
+          exact
+          Component={() => (
+            <DetalhesProjeto
               theme={theme}
               setTheme={setTheme}
               isNavbarVisible={isNavbarVisible}

@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@mui/material';
 import '../assets/styles/Header.css';
 import { useLocation } from 'react-router-dom';
+
+const getStoredProjects = () => {
+  return JSON.parse(localStorage.getItem('projects')) || [];
+};
 
 const pageNameMapping = {
   '/': 'Meus Projetos',
@@ -14,7 +18,25 @@ const pageNameMapping = {
 
 const Header = ({ toggleNavbar }) => {
   const location = useLocation();
-  const currentPageName = pageNameMapping[location.pathname];
+
+  const [projectNames, setProjectNames] = useState([]);
+
+  useEffect(() => {
+    const storedProjects = getStoredProjects();
+    const names = storedProjects.map((project) => project.projectName);
+    setProjectNames(names);
+  }, []);
+
+  let currentPageName = pageNameMapping[location.pathname];
+
+  if (!currentPageName && location.pathname !== '/') {
+    const projectName = decodeURIComponent(location.pathname.substring(1));
+    if (projectNames.includes(projectName)) {
+      currentPageName = `Projeto: ${projectName}`;
+    } else {
+      currentPageName = 'Projeto Inválido';
+    }
+  }
 
   return (
     <header className='header'>

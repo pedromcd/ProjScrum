@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export const useProjectCreation = () => {
   const [projectName, setProjectName] = useState('');
@@ -52,11 +53,13 @@ export const useProjectCreation = () => {
     setProjectMembers,
     handleCreateProject,
     projectCards: projectCards.map((project) => (
-      <div className='project-cards' key={project.projectName}>
-        <h1>{project.projectName}</h1>
-        <h2>{project.projectDesc}</h2>
-        <h3>Data de entrega: {project.deliveryDate}</h3>
-      </div>
+      <Link className='link' to={`/${project.projectName}`} key={project.projectName}>
+        <div className='project-cards' key={project.projectName}>
+          <h1>{project.projectName}</h1>
+          <h2>{project.projectDesc}</h2>
+          <h3>Data de entrega: {project.deliveryDate}</h3>
+        </div>
+      </Link>
     )),
     isFormValid,
   };
