@@ -44,8 +44,6 @@ export const useProjectCreation = () => {
     storedProjects.push(newProject);
     localStorage.setItem('projects', JSON.stringify(storedProjects));
 
-    setProjectCards((prevProjectCards) => [...prevProjectCards, newProject]);
-
     setProjectName('');
     setProjectDesc('');
     setDeliveryDate('');

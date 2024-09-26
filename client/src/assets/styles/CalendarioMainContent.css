@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   margin-left: 160px;
-  margin-top: 50px;
+  margin-top: 20px;
   padding-left: 20px;
   transition: 0.15s;
 }
@@ -32,7 +32,7 @@
   flex-direction: column;
   align-items: center;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
-  height: 630px;
+  height: 680px;
   width: 1070px;
   padding-bottom: 30px;
   flex: 1;
@@ -52,7 +52,7 @@
   justify-content: center;
   margin-left: 20px;
   margin-right: 15px;
-  height: 630px;
+  height: 680px;
   width: 300px;
   background-color: #eff0f9;
   color: black;
@@ -60,7 +60,7 @@
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
 }
 
-.event-button {
+.create-event-button {
   align-items: center;
   margin-bottom: 550px;
   background-color: #eff0f9;
@@ -71,6 +71,33 @@
   padding: 7px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   cursor: pointer;
+}
+
+.create-event {
+  position: fixed;
+  bottom: 60px;
+  border-radius: 6px;
+  right: 30%;
+  padding: 10px 50px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  cursor: pointer;
+}
+
+.event-inputs input,
+.event-inputs select {
+  height: 40px;
+}
+
+.event-inputs {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  top: -115px;
+  left: -20px;
+}
+
+.event-inputs li {
+  margin-bottom: 35px;
 }
 
 .dark .calendar-container {

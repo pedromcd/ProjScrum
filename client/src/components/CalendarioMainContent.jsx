@@ -29,7 +29,7 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
           />
         </div>
         <div className='event-container'>
-          <button className='event-button' onClick={() => setOpenModal(true)}>
+          <button className='create-event-button' onClick={() => setOpenModal(true)}>
             <span className='plus-icon'>
               <FontAwesomeIcon icon={faPlus} />
             </span>
@@ -37,7 +37,25 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
           </button>
         </div>
       </div>
-      <Modal isOpen={openModal}></Modal>
+      <Modal isOpen={openModal}>
+        <div className='modal-event-inputs'>
+          <ul className='event-inputs'>
+            <li>
+              <p>Titulo do evento:</p>
+              <input type='text' placeholder='Titulo' />
+            </li>
+            <li>
+              <p>Descrição</p>
+              <input type='text' placeholder='Descrição' />
+            </li>
+            <li>
+              <p>Data do evento</p>
+              <input type='date' />
+            </li>
+          </ul>
+        </div>
+        <button className='create-event'>Adicionar evento</button>
+      </Modal>
     </div>
   );
 };
