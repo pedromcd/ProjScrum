@@ -11,6 +11,7 @@ import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
+  const [memberName, setMemberName] = useState('');
 
   const {
     projectName,
@@ -101,10 +102,17 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
             <li>
               <p>Adicionar membros</p>
               <input
+                className='select-members'
                 type='text'
                 placeholder='Membros'
-                value={projectMembers}
-                onChange={(e) => setProjectMembers(e.target.value)}
+                value={memberName}
+                onChange={(e) => setMemberName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    setProjectMembers([...projectMembers, memberName]);
+                    setMemberName('');
+                  }
+                }}
               />
             </li>
           </ul>

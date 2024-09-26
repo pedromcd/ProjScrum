@@ -11,25 +11,50 @@
   margin-left: 0;
 }
 
-.project-details-container.full-width {
-  margin-left: 0;
+.project-details-container.full-width .select-sprint {
+  margin-left: 50px;
 }
 
-.project-details-container.full-width .select-sprint {
-  margin-left: 100px;
+.create-button {
+  z-index: 1;
 }
 
 .select-sprint {
+  display: flex;
+  align-items: center;
   width: 200px;
   border-radius: 5px;
-  margin-top: -100px;
+  margin-top: -130px;
   padding: 5px;
+  height: 30px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  cursor: pointer;
+}
+
+.avatar-group {
+  display: flex;
+  height: 5px;
+  margin-left: 275px;
+}
+
+.project-details-container.full-width .avatar-group {
+  margin-left: 350px;
+}
+
+.sprints-list {
+  height: 0px;
+  margin-top: 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.project-details-container.full-width .sprints-list {
+  margin-left: 50px;
 }
 
 .daily-container {
-  margin-top: 65px;
-  height: 500px;
+  margin-top: 20px;
+  height: 480px;
 }
 
 .daily-header {
@@ -40,6 +65,7 @@
   border-radius: 5px;
   padding: 10px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84, 0.4);
+  margin-top: 65px;
 }
 
 .daily-header div {
@@ -58,14 +84,73 @@
 
 .daily-cards div {
   display: flex;
+  flex-wrap: wrap;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: #e4e5f1;
   border-radius: 10px;
-  height: 400px;
-  width: 350px;
+  min-height: 200px;
+  min-width: 350px;
+}
+
+.daily-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  background: #eff0f9;
   box-shadow: 1px 1px 5px rgb(84, 84, 84, 0.4);
+  height: 400px;
+}
+
+.daily-card h2 {
+  margin-top: -25px;
+  margin-bottom: 40px;
+}
+
+.daily-card p {
+  margin-bottom: 50px;
+}
+
+.daily-card p:last-child {
+  margin-bottom: -10px;
+  font-size: 14px;
+}
+
+.sprint-inputs input,
+.sprint-inputs select {
+  height: 40px;
+}
+
+.daily-inputs input,
+.daily-inputs select {
+  height: 40px;
+}
+
+.sprint-inputs,
+.daily-inputs {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  top: -115px;
+  left: -20px;
+}
+
+.sprint-inputs li,
+.daily-inputs li {
+  margin-bottom: 35px;
+}
+
+.create-sprint,
+.create-daily {
+  position: fixed;
+  bottom: 60px;
+  border-radius: 6px;
+  right: 35.5%;
+  padding: 10px 50px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  cursor: pointer;
 }
 
 .dark .project-details-container .create-button {
@@ -77,6 +162,10 @@
 .dark .daily-header {
   background-color: #273142;
   box-shadow: 1px 1px 5px black;
+}
+
+.dark .daily-header p {
+  color: #ffffff;
 }
 
 .dark .daily-header div {
@@ -91,7 +180,10 @@
 }
 
 .dark .daily-cards div {
+  color: #ffffff;
+}
+
+.dark .daily-card {
   background-color: #273142;
   box-shadow: 1px 1px 5px black;
-  color: #ffffff;
 }

@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
+export const formatDate = (date) => {
+  const [year, month, day] = date.split('-');
+  const formattedDate = new Date(Number(year), Number(month) - 1, Number(day));
+  return formattedDate.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+};
+
 export const useProjectCreation = () => {
   const [projectName, setProjectName] = useState('');
   const [projectDesc, setProjectDesc] = useState('');
@@ -25,8 +35,10 @@ export const useProjectCreation = () => {
       projectName,
       projectDesc,
       deliveryDate: formattedDate,
-      projectMembers,
+      projectMembers: projectMembers.join(','),
     };
+
+    setProjectCards([...projectCards, newProject]);
 
     const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
     storedProjects.push(newProject);

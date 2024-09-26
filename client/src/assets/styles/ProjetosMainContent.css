@@ -50,6 +50,19 @@ input {
   width: 250px;
 }
 
+.project-inputs input,
+.project-inputs select {
+  height: 40px;
+}
+
+select {
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  border-radius: 6px;
+  height: 20px;
+  padding: 10px;
+  width: 250px;
+}
+
 .create-project {
   position: fixed;
   bottom: 60px;
