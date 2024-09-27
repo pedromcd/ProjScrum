@@ -8,8 +8,8 @@ import { formatDate } from '../utils/generateCard';
 
 const ProjectDetails = ({ isNavbarVisible, project }) => {
   const [state, setState] = useState({
-    sprints: JSON.parse(localStorage.getItem('sprints')) || [],
-    dailies: JSON.parse(localStorage.getItem('dailies')) || [],
+    sprints: [],
+    dailies: [],
     sprintName: '',
     deliveryDate: '',
     dailyName: '',
@@ -19,48 +19,106 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     openDailyModal: false,
     avatarColors: {},
     dailyTag: 'Pendente',
-    selectedSprint: JSON.parse(localStorage.getItem('selectedSprint')) || '',
+    selectedSprint: '',
     pendingDailies: [],
     inProgressDailies: [],
     completedDailies: [],
   });
 
+  // Load sprints and dailies associated with the current project
+  useEffect(() => {
+    if (project && project.id) {
+      const storedSprints = JSON.parse(localStorage.getItem(`sprints_${project.id}`)) || [];
+      const storedDailies = JSON.parse(localStorage.getItem(`dailies_${project.id}`)) || [];
+      const selectedSprint = JSON.parse(localStorage.getItem(`selectedSprint_${project.id}`)) || '';
+
+      setState((prevState) => ({
+        ...prevState,
+        sprints: storedSprints,
+        dailies: storedDailies,
+        selectedSprint: selectedSprint,
+      }));
+    }
+  }, [project]);
+
+  // Update the daily lists based on sprint and tag
+  useEffect(() => {
+    if (state.sprints.length && state.selectedSprint) {
+      const sprintId = parseInt(state.selectedSprint, 10);
+      const pendingDailies = state.dailies.filter(
+        (daily) => daily.tag === 'Pendente' && daily.sprintId === sprintId
+      );
+      const inProgressDailies = state.dailies.filter(
+        (daily) => daily.tag === 'Em progresso' && daily.sprintId === sprintId
+      );
+      const completedDailies = state.dailies.filter(
+        (daily) => daily.tag === 'Concluido' && daily.sprintId === sprintId
+      );
+
+      setState((prevState) => ({
+        ...prevState,
+        pendingDailies,
+        inProgressDailies,
+        completedDailies,
+      }));
+    }
+  }, [state.dailies, state.selectedSprint, state.sprints.length]); // Add `state.sprints.length` as dependency
+
   const handleCreateSprint = () => {
+    if (!state.sprintName || !state.deliveryDate) {
+      return; // Prevent creating a sprint with missing fields
+    }
+
     const newSprint = {
       id: state.sprints.length + 1,
+      projectId: project.id, // Attach project ID to the sprint
       name: state.sprintName,
       deliveryDate: state.deliveryDate,
     };
+
+    const updatedSprints = [...state.sprints, newSprint];
+
     setState((prevState) => ({
       ...prevState,
-      sprints: [...prevState.sprints, newSprint],
+      sprints: updatedSprints,
       sprintName: '',
       deliveryDate: '',
       openSprintModal: false,
     }));
-    localStorage.setItem('sprints', JSON.stringify([...state.sprints, newSprint]));
+
+    // Save sprints under the current project
+    localStorage.setItem(`sprints_${project.id}`, JSON.stringify(updatedSprints));
   };
 
   const handleCreateDaily = () => {
-    const sprintId = state.selectedSprint === '' ? 0 : parseInt(state.selectedSprint);
+    if (!state.dailyName || !state.dailyDeliveryDate || !state.selectedSprint) {
+      return; // Prevent creating a daily with missing fields
+    }
+
     const newDaily = {
       id: state.dailies.length + 1,
+      projectId: project.id, // Attach project ID to the daily
+      sprintId: parseInt(state.selectedSprint, 10), // Ensure sprintId is a number
       name: state.dailyName,
       description: state.description,
       deliveryDate: state.dailyDeliveryDate,
-      sprintId: sprintId,
       tag: state.dailyTag,
     };
+
+    const updatedDailies = [...state.dailies, newDaily];
+
     setState((prevState) => ({
       ...prevState,
-      dailies: [...prevState.dailies, newDaily],
+      dailies: updatedDailies,
       dailyName: '',
       description: '',
       dailyDeliveryDate: '',
-      dailyTag: '',
+      dailyTag: 'Pendente',
       openDailyModal: false,
     }));
-    localStorage.setItem('dailies', JSON.stringify([...state.dailies, newDaily]));
+
+    // Save dailies under the current project
+    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
   };
 
   const handleSprintSelect = (e) => {
@@ -69,6 +127,14 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     localStorage.setItem('selectedSprint', JSON.stringify(selectedSprintId));
   };
 
+  useEffect(() => {
+    if (state.sprints.length === 1) {
+      setState((prevState) => ({ ...prevState, selectedSprint: state.sprints[0].id }));
+      localStorage.setItem('selectedSprint', JSON.stringify(state.sprints[0].id));
+    }
+  }, [state.sprints]);
+
+  // Set avatar colors for project members
   useEffect(() => {
     if (project && project.projectMembers) {
       const colors = {};
@@ -79,46 +145,27 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }
   }, [project]);
 
-  useEffect(() => {
-    const pendingDailies = state.dailies.filter(
-      (daily) => daily.tag === 'Pendente' && daily.sprintId === parseInt(state.selectedSprint)
-    );
-    const inProgressDailies = state.dailies.filter(
-      (daily) => daily.tag === 'Em progresso' && daily.sprintId === parseInt(state.selectedSprint)
-    );
-    const completedDailies = state.dailies.filter(
-      (daily) => daily.tag === 'Concluido' && daily.sprintId === parseInt(state.selectedSprint)
-    );
-    setState((prevState) => ({ ...prevState, pendingDailies, inProgressDailies, completedDailies }));
-  }, [state.dailies, state.selectedSprint]);
-
+  // Render avatars with random colors
   const stringAvatar = (name) => {
-    if (typeof name === 'string') {
-      const members = name.split(',');
-      return {
-        sx: {
-          bgcolor: state.avatarColors[members[0]],
-        },
-        children: `${members[0].charAt(0).toUpperCase()}`,
-      };
-    } else {
-      return {
-        sx: {
-          bgcolor: state.avatarColors[name],
-        },
-        children: `${name.charAt(0).toUpperCase()}`,
-      };
-    }
+    const color = state.avatarColors[name] || '#000'; // Fallback color
+    return {
+      sx: {
+        bgcolor: color,
+      },
+      children: `${name.charAt(0).toUpperCase()}`,
+    };
   };
 
+  // Scroll handler (added the missing function)
   const handleScroll = (e, tag) => {
     const container = e.target;
     if (container.scrollTop + container.offsetHeight >= container.scrollHeight) {
-      // Load more data for the tag
+      // Implement pagination or data fetching logic for the tag if needed
       console.log(`Load more data for ${tag} tag`);
     }
   };
 
+  // Guard clause in case project is not passed
   if (!project) {
     return <div>No project found</div>;
   }
@@ -137,7 +184,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
             </div>
           }
           placement='right'
-          sx={{ marginLeft: 2 }}
         >
           <AvatarGroup max={4}>
             {project.projectMembers &&
@@ -150,6 +196,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </Tooltip>
       </div>
 
+      {/* Create Sprint Button */}
       <button
         className='create-button'
         onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
@@ -160,6 +207,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         Criar Sprint
       </button>
 
+      {/* Create Daily Button */}
       <button
         className='create-button'
         onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
@@ -170,6 +218,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         Criar Daily
       </button>
 
+      {/* Modal for Sprint Creation */}
       <Modal isOpen={state.openSprintModal}>
         <div className='modal-sprint-inputs'>
           <ul className='sprint-inputs'>
@@ -198,6 +247,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </div>
       </Modal>
 
+      {/* Modal for Daily Creation */}
       <Modal isOpen={state.openDailyModal}>
         <div className='modal-daily-inputs'>
           <ul className='daily-inputs'>
@@ -259,7 +309,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </div>
       </Modal>
 
-      <select className='select-sprint' value={state.selectedSprint} onChange={handleSprintSelect}>
+      <select
+        className='select-sprint'
+        value={state.selectedSprint}
+        onChange={handleSprintSelect}
+        disabled={state.sprints.length === 1}
+      >
         {state.sprints.map((sprint) => (
           <option key={sprint.id} value={sprint.id}>
             {sprint.name}

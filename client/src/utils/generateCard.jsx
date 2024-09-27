@@ -31,7 +31,9 @@ export const useProjectCreation = () => {
       return;
     }
 
+    const newProjectId = `${projectName}_${Date.now()}`;
     const newProject = {
+      id: newProjectId,
       projectName,
       projectDesc,
       deliveryDate: formattedDate,

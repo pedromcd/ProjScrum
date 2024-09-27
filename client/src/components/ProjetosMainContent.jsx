@@ -104,7 +104,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
               <input
                 className='select-members'
                 type='text'
-                placeholder='Membros'
+                placeholder='Aperte enter para adicionar'
                 value={memberName}
                 onChange={(e) => setMemberName(e.target.value)}
                 onKeyPress={(e) => {
