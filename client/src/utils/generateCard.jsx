@@ -31,7 +31,7 @@ export const useProjectCreation = () => {
       return;
     }
 
-    const newProjectId = `${projectName}_${Date.now()}`;
+    const newProjectId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
     const newProject = {
       id: newProjectId,
       projectName,

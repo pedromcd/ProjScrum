@@ -23,9 +23,9 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     pendingDailies: [],
     inProgressDailies: [],
     completedDailies: [],
+    draggedDailyId: null, // New state to store dragged daily id
   });
 
-  // Load sprints and dailies associated with the current project
   useEffect(() => {
     if (project && project.id) {
       const storedSprints = JSON.parse(localStorage.getItem(`sprints_${project.id}`)) || [];
@@ -41,7 +41,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }
   }, [project]);
 
-  // Update the daily lists based on sprint and tag
   useEffect(() => {
     if (state.sprints.length && state.selectedSprint) {
       const sprintId = parseInt(state.selectedSprint, 10);
@@ -62,16 +61,16 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         completedDailies,
       }));
     }
-  }, [state.dailies, state.selectedSprint, state.sprints.length]); // Add `state.sprints.length` as dependency
+  }, [state.dailies, state.selectedSprint, state.sprints.length]);
 
   const handleCreateSprint = () => {
     if (!state.sprintName || !state.deliveryDate) {
-      return; // Prevent creating a sprint with missing fields
+      return;
     }
 
     const newSprint = {
       id: state.sprints.length + 1,
-      projectId: project.id, // Attach project ID to the sprint
+      projectId: project.id,
       name: state.sprintName,
       deliveryDate: state.deliveryDate,
     };
@@ -92,13 +91,13 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
 
   const handleCreateDaily = () => {
     if (!state.dailyName || !state.dailyDeliveryDate || !state.selectedSprint) {
-      return; // Prevent creating a daily with missing fields
+      return;
     }
 
     const newDaily = {
       id: state.dailies.length + 1,
-      projectId: project.id, // Attach project ID to the daily
-      sprintId: parseInt(state.selectedSprint, 10), // Ensure sprintId is a number
+      projectId: project.id,
+      sprintId: parseInt(state.selectedSprint, 10),
       name: state.dailyName,
       description: state.description,
       deliveryDate: state.dailyDeliveryDate,
@@ -117,7 +116,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       openDailyModal: false,
     }));
 
-    // Save dailies under the current project
     localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
   };
 
@@ -145,9 +143,8 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }
   }, [project]);
 
-  // Render avatars with random colors
   const stringAvatar = (name) => {
-    const color = state.avatarColors[name] || '#000'; // Fallback color
+    const color = state.avatarColors[name] || '#000';
     return {
       sx: {
         bgcolor: color,
@@ -156,16 +153,25 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     };
   };
 
-  // Scroll handler (added the missing function)
-  const handleScroll = (e, tag) => {
-    const container = e.target;
-    if (container.scrollTop + container.offsetHeight >= container.scrollHeight) {
-      // Implement pagination or data fetching logic for the tag if needed
-      console.log(`Load more data for ${tag} tag`);
-    }
+  const handleDragStart = (dailyId) => {
+    setState((prevState) => ({ ...prevState, draggedDailyId: dailyId }));
   };
 
-  // Guard clause in case project is not passed
+  const handleDrop = (newTag) => {
+    const { draggedDailyId, dailies } = state;
+    const updatedDailies = dailies.map((daily) =>
+      daily.id === draggedDailyId ? { ...daily, tag: newTag } : daily
+    );
+
+    setState((prevState) => ({
+      ...prevState,
+      dailies: updatedDailies,
+      draggedDailyId: null,
+    }));
+
+    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
+  };
+
   if (!project) {
     return <div>No project found</div>;
   }
@@ -196,7 +202,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </Tooltip>
       </div>
 
-      {/* Create Sprint Button */}
       <button
         className='create-button'
         onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
@@ -207,7 +212,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         Criar Sprint
       </button>
 
-      {/* Create Daily Button */}
       <button
         className='create-button'
         onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
@@ -218,7 +222,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         Criar Daily
       </button>
 
-      {/* Modal for Sprint Creation */}
       <Modal isOpen={state.openSprintModal}>
         <div className='modal-sprint-inputs'>
           <ul className='sprint-inputs'>
@@ -247,7 +250,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </div>
       </Modal>
 
-      {/* Modal for Daily Creation */}
       <Modal isOpen={state.openDailyModal}>
         <div className='modal-daily-inputs'>
           <ul className='daily-inputs'>
@@ -344,27 +346,54 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           <div className='completed'>Concluido</div>
         </div>
         <div className='daily-cards'>
-          <div className='pending-container' onScroll={(e) => handleScroll(e, 'Pendente')}>
+          <div
+            className='pending-container'
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop('Pendente')}
+          >
             {state.pendingDailies.map((daily) => (
-              <div key={daily.id} className='daily-card'>
+              <div
+                key={daily.id}
+                className='daily-card'
+                draggable
+                onDragStart={() => handleDragStart(daily.id)}
+              >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
               </div>
             ))}
           </div>
-          <div className='in-progress-container' onScroll={(e) => handleScroll(e, 'Em progresso')}>
+          <div
+            className='in-progress-container'
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop('Em progresso')}
+          >
             {state.inProgressDailies.map((daily) => (
-              <div key={daily.id} className='daily-card'>
+              <div
+                key={daily.id}
+                className='daily-card'
+                draggable
+                onDragStart={() => handleDragStart(daily.id)}
+              >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
               </div>
             ))}
           </div>
-          <div className='completed-container' onScroll={(e) => handleScroll(e, 'Concluido')}>
+          <div
+            className='completed-container'
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop('Concluido')}
+          >
             {state.completedDailies.map((daily) => (
-              <div key={daily.id} className='daily-card'>
+              <div
+                key={daily.id}
+                className='daily-card'
+                draggable
+                onDragStart={() => handleDragStart(daily.id)}
+              >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
