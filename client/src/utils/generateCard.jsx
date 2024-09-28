@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { v4 as uuid } from 'uuid';
 
 export const formatDate = (date) => {
   const [year, month, day] = date.split('-');
@@ -17,8 +18,8 @@ export const useProjectCreation = () => {
   const [deliveryDate, setDeliveryDate] = useState('');
   const [projectMembers, setProjectMembers] = useState('');
   const [projectCards, setProjectCards] = useState(JSON.parse(localStorage.getItem('projects') || '[]'));
-
   const [year, month, day] = deliveryDate.split('-');
+
   const date = new Date(Number(year), Number(month) - 1, Number(day));
   const formattedDate = date.toLocaleDateString('pt-BR', {
     day: '2-digit',
@@ -31,7 +32,7 @@ export const useProjectCreation = () => {
       return;
     }
 
-    const newProjectId = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+    const newProjectId = uuid();
     const newProject = {
       id: newProjectId,
       projectName,
@@ -74,5 +75,6 @@ export const useProjectCreation = () => {
       </Link>
     )),
     isFormValid,
+    setProjectCards,
   };
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../assets/styles/ProjectDetails.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Modal from './Modal';
 import { Avatar, AvatarGroup, Tooltip } from '@mui/material';
 import { formatDate } from '../utils/generateCard';
@@ -23,8 +23,26 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     pendingDailies: [],
     inProgressDailies: [],
     completedDailies: [],
-    draggedDailyId: null, // New state to store dragged daily id
+    draggedDailyId: null,
   });
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [dailyToDelete, setDailyToDelete] = useState(null);
+
+  const handleDeleteDaily = (dailyId) => {
+    setDailyToDelete(dailyId);
+    setOpenDeleteModal(true);
+  };
+
+  const handleDeleteConfirm = () => {
+    const updatedDailies = state.dailies.filter((daily) => daily.id !== dailyToDelete);
+    setState((prevState) => ({ ...prevState, dailies: updatedDailies }));
+    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
+    setOpenDeleteModal(false);
+  };
+
+  const handleDeleteCancel = () => {
+    setOpenDeleteModal(false);
+  };
 
   useEffect(() => {
     if (project && project.id) {
@@ -132,7 +150,6 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }
   }, [state.sprints]);
 
-  // Set avatar colors for project members
   useEffect(() => {
     if (project && project.projectMembers) {
       const colors = {};
@@ -311,6 +328,20 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </div>
       </Modal>
 
+      <Modal isOpen={openDeleteModal}>
+        <div className='modal-delete-daily'>
+          <p>Tem certeza que deseja excluir essa daily?</p>
+          <div className='button-container'>
+            <button className='delete-confirm' onClick={handleDeleteConfirm}>
+              Sim
+            </button>
+            <button className='delete-cancel' onClick={handleDeleteCancel}>
+              Não
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       <select
         className='select-sprint'
         value={state.selectedSprint}
@@ -360,6 +391,9 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
               >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
+                <span className='trash-icon' onClick={() => handleDeleteDaily(daily.id)}>
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </span>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
               </div>
             ))}
@@ -378,6 +412,9 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
               >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
+                <span className='trash-icon' onClick={() => handleDeleteDaily(daily.id)}>
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </span>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
               </div>
             ))}
@@ -396,6 +433,9 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
               >
                 <h2>{daily.name}</h2>
                 <p>{daily.description}</p>
+                <span className='trash-icon' onClick={() => handleDeleteDaily(daily.id)}>
+                  <FontAwesomeIcon icon={faTrashCan} />
+                </span>
                 <p>Data de entrega: {formatDate(daily.deliveryDate)}</p>
               </div>
             ))}

@@ -4,13 +4,12 @@ import Header from '../components/Header';
 import ProjectDetails from '../components/ProjectDetails';
 import { useParams } from 'react-router-dom';
 
-const getStoredProjects = () => {
-  return JSON.parse(localStorage.getItem('projects')) || [];
-};
-
 const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar }) => {
   const { projectName } = useParams();
   const [project, setProject] = useState(null);
+  const getStoredProjects = () => {
+    return JSON.parse(localStorage.getItem('projects')) || [];
+  };
 
   useEffect(() => {
     const storedProjects = getStoredProjects();
@@ -25,7 +24,7 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar }) => 
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
       <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
-      <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} />
+      {project && <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} />}
     </div>
   );
 };
