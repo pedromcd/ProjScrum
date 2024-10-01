@@ -14,8 +14,33 @@
   margin-left: 50px;
 }
 
+.button-container {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 0px;
+}
+
 .create-button {
   z-index: 1;
+  margin-right: 20px;
+}
+
+.end-sprint {
+  z-index: 1;
+  display: inline-block;
+  background-color: #eff0f9;
+  border-radius: 5px;
+  border: 2px solid red;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  font-size: 25px;
+  padding: 3px 7px;
+  margin-top: -5px;
+  width: 200px;
+  margin-bottom: 35px;
+  align-self: flex-end;
+  transition: 0.15s;
+  cursor: pointer;
 }
 
 .select-sprint {
@@ -23,17 +48,22 @@
   align-items: center;
   width: 200px;
   border-radius: 5px;
-  margin-top: -130px;
+  margin-top: -75px;
   padding: 5px;
   height: 30px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   cursor: pointer;
 }
 
+.no-sprints-message {
+  margin-top: 5px;
+}
+
 .avatar-group {
   display: flex;
   height: 5px;
-  margin-left: 275px;
+  margin-bottom: 0px;
+  margin-left: 345px;
 }
 
 .project-details-container.full-width .avatar-group {
@@ -52,8 +82,7 @@
 }
 
 .daily-container {
-  margin-top: 20px;
-  height: 560px;
+  height: 580px;
 }
 
 .daily-header {
@@ -138,17 +167,17 @@
 }
 
 .sprint-inputs input,
-.sprint-inputs select {
-  height: 40px;
-}
-
+.sprint-inputs select,
 .daily-inputs input,
-.daily-inputs select {
+.daily-inputs select,
+.evaluation-inputs input,
+.evaluation-inputs select {
   height: 40px;
 }
 
 .sprint-inputs,
-.daily-inputs {
+.daily-inputs,
+.evaluation-inputs {
   display: flex;
   flex-direction: column;
   position: relative;
@@ -157,12 +186,14 @@
 }
 
 .sprint-inputs li,
-.daily-inputs li {
+.daily-inputs li,
+.evaluation-inputs li {
   margin-bottom: 35px;
 }
 
 .create-sprint,
-.create-daily {
+.create-daily,
+.submit-evaluation {
   position: fixed;
   bottom: 60px;
   border-radius: 6px;
@@ -170,6 +201,10 @@
   padding: 10px 50px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   cursor: pointer;
+}
+
+.submit-evaluation {
+  right: 30.6%;
 }
 
 .pending-container,
@@ -181,7 +216,7 @@
   overflow-y: scroll;
   overflow-x: hidden;
   padding: 10px;
-  max-height: 400px;
+  max-height: 450px;
   box-sizing: border-box;
 }
 
@@ -194,7 +229,7 @@
   height: 30px;
 }
 
-.button-container {
+.buttons-container {
   margin-top: 30px;
   margin-left: 19%;
 }
@@ -221,6 +256,13 @@
 .dark .project-details-container .create-button {
   background: #273142;
   color: #ffffff;
+  box-shadow: 1px 1px 5px black;
+}
+
+.dark .project-details-container .end-sprint {
+  background: #273142;
+  color: #ffffff;
+  border: 2px solid rgb(196, 0, 0);
   box-shadow: 1px 1px 5px black;
 }
 

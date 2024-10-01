@@ -24,9 +24,19 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     inProgressDailies: [],
     completedDailies: [],
     draggedDailyId: null,
+    evaluationModalOpen: false,
+    evaluationScores: {
+      atividades: 0,
+      equipe: 0,
+      comunicacao: 0,
+      entregas: 0,
+    },
+    endedSprints: [],
   });
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [dailyToDelete, setDailyToDelete] = useState(null);
+  const [, updateState] = React.useState();
+  const forceUpdate = React.useCallback(() => updateState({}), []);
 
   const handleDeleteDaily = (dailyId) => {
     setDailyToDelete(dailyId);
@@ -48,13 +58,18 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     if (project && project.id) {
       const storedSprints = JSON.parse(localStorage.getItem(`sprints_${project.id}`)) || [];
       const storedDailies = JSON.parse(localStorage.getItem(`dailies_${project.id}`)) || [];
-      const selectedSprint = JSON.parse(localStorage.getItem(`selectedSprint_${project.id}`)) || '';
+      const selectedSprint =
+        JSON.parse(localStorage.getItem(`selectedSprint_${project.id}`)) ||
+        (storedSprints.length === 1 ? storedSprints[0].id : '');
+
+      const endedSprints = JSON.parse(localStorage.getItem(`endedSprints_${project.id}`)) || [];
 
       setState((prevState) => ({
         ...prevState,
         sprints: storedSprints,
         dailies: storedDailies,
         selectedSprint: selectedSprint,
+        endedSprints: endedSprints,
       }));
     }
   }, [project]);
@@ -140,7 +155,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
   const handleSprintSelect = (e) => {
     const selectedSprintId = e.target.value;
     setState((prevState) => ({ ...prevState, selectedSprint: selectedSprintId }));
-    localStorage.setItem('selectedSprint', JSON.stringify(selectedSprintId));
+    localStorage.setItem(`selectedSprint_${project.id}`, JSON.stringify(selectedSprintId));
   };
 
   useEffect(() => {
@@ -189,6 +204,53 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
   };
 
+  const handleEvaluation = () => {
+    setState((prevState) => ({ ...prevState, evaluationModalOpen: true }));
+  };
+
+  const handleEvaluationSubmit = () => {
+    const { evaluationScores, selectedSprint, sprints, dailies } = state;
+    const sprintToEnd = sprints.find((sprint) => sprint.id === parseInt(selectedSprint));
+
+    const endedSprint = {
+      id: selectedSprint,
+      projectId: project.id,
+      name: sprintToEnd.name,
+      evaluationScores,
+      dailies: dailies.filter((daily) => daily.sprintId === parseInt(selectedSprint)),
+    };
+
+    const updatedEndedSprints = [...state.endedSprints, endedSprint];
+    const updatedSprints = sprints.filter((sprint) => sprint.id !== parseInt(selectedSprint));
+    const updatedDailies = dailies.filter((daily) => daily.sprintId !== parseInt(selectedSprint));
+
+    // Atualizar o estado local
+    setState((prevState) => ({
+      ...prevState,
+      endedSprints: updatedEndedSprints,
+      sprints: updatedSprints,
+      dailies: updatedDailies,
+      evaluationModalOpen: false,
+      selectedSprint: updatedSprints.length > 0 ? updatedSprints[0].id.toString() : '',
+    }));
+
+    // Atualizar o localStorage
+    localStorage.setItem(`endedSprints_${project.id}`, JSON.stringify(updatedEndedSprints));
+    localStorage.setItem(`sprints_${project.id}`, JSON.stringify(updatedSprints));
+    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
+
+    // Forçar uma re-renderização
+    forceUpdate();
+  };
+
+  const handleEvaluationChange = (e) => {
+    const { name, value } = e.target;
+    setState((prevState) => ({
+      ...prevState,
+      evaluationScores: { ...prevState.evaluationScores, [name]: parseInt(value, 10) },
+    }));
+  };
+
   if (!project) {
     return <div>No project found</div>;
   }
@@ -219,25 +281,31 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </Tooltip>
       </div>
 
-      <button
-        className='create-button'
-        onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
-      >
-        <span className='plus-icon'>
-          <FontAwesomeIcon icon={faPlus} />
-        </span>
-        Criar Sprint
-      </button>
+      <div className='button-container'>
+        <button
+          className='create-button'
+          onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
+        >
+          <span className='plus-icon'>
+            <FontAwesomeIcon icon={faPlus} />
+          </span>
+          Criar Sprint
+        </button>
 
-      <button
-        className='create-button'
-        onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
-      >
-        <span className='plus-icon'>
-          <FontAwesomeIcon icon={faPlus} />
-        </span>
-        Criar Daily
-      </button>
+        <button
+          className='create-button'
+          onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
+        >
+          <span className='plus-icon'>
+            <FontAwesomeIcon icon={faPlus} />
+          </span>
+          Criar Daily
+        </button>
+
+        <button className='end-sprint' onClick={handleEvaluation}>
+          Finalizar sprint
+        </button>
+      </div>
 
       <Modal isOpen={state.openSprintModal}>
         <div className='modal-sprint-inputs'>
@@ -328,10 +396,65 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         </div>
       </Modal>
 
+      <Modal isOpen={state.evaluationModalOpen}>
+        <div className='modal-evaluation-inputs'>
+          <ul className='evaluation-inputs'>
+            <li>
+              <p>Atividades</p>
+              <input
+                type='number'
+                value={state.evaluationScores.atividades}
+                onChange={handleEvaluationChange}
+                name='atividades'
+                min='0'
+                max='100'
+              />
+            </li>
+            <li>
+              <p>Equipe</p>
+              <input
+                type='number'
+                value={state.evaluationScores.equipe}
+                onChange={handleEvaluationChange}
+                name='equipe'
+                min='0'
+                max='100'
+              />
+            </li>
+            <li>
+              <p>Comunicação</p>
+              <input
+                type='number'
+                value={state.evaluationScores.comunicacao}
+                onChange={handleEvaluationChange}
+                name='comunicacao'
+                min='0'
+                max='100'
+              />
+            </li>
+            <li>
+              <p>Entregas</p>
+              <input
+                type='number'
+                value={state.evaluationScores.entregas}
+                onChange={handleEvaluationChange}
+                name='entregas'
+                min='0'
+                max='100'
+              />
+            </li>
+          </ul>
+
+          <button className='submit-evaluation' onClick={handleEvaluationSubmit}>
+            Enviar avaliação
+          </button>
+        </div>
+      </Modal>
+
       <Modal isOpen={openDeleteModal}>
         <div className='modal-delete-daily'>
           <p>Tem certeza que deseja excluir essa daily?</p>
-          <div className='button-container'>
+          <div className='buttons-container'>
             <button className='delete-confirm' onClick={handleDeleteConfirm}>
               Sim
             </button>

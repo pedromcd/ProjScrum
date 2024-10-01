@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+// ProjetosMainContent.jsx
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import '../assets/styles/ProjetosMainContent.css';
@@ -8,13 +9,14 @@ import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
+import { Link } from 'react-router-dom';
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
   const [memberName, setMemberName] = useState('');
-  const [deleteMode, setDeleteMode] = useState(false); // State for delete mode
-  const [selectedCard, setSelectedCard] = useState(null); // Card selected for deletion
-  const [openDeleteModal, setOpenDeleteModal] = useState(false); // Delete confirmation modal
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
 
   const {
     projectName,
@@ -31,33 +33,44 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     isFormValid,
   } = useProjectCreation();
 
+  useEffect(() => {
+    console.log('Current projectCards:', projectCards);
+  }, [projectCards]);
+
   const handleCreateProjectAndCloseModal = () => {
     handleCreateProject();
     setOpenModal(false);
   };
 
   const handleTrashClick = () => {
-    setDeleteMode((prevMode) => !prevMode); // Toggle delete mode
+    setDeleteMode((prevMode) => !prevMode);
   };
 
-  const handleCardClick = (index) => {
+  const handleCardClick = (projectId) => {
     if (deleteMode) {
-      setSelectedCard(index); // Select the card to be deleted
-      setOpenDeleteModal(true); // Open the confirmation modal
+      console.log('Selected project for deletion:', projectId);
+      setSelectedCard(projectId);
+      setOpenDeleteModal(true);
     }
   };
 
   const handleDeleteConfirm = () => {
-    const newProjectCards = projectCards.filter((project) => project.id !== selectedCard.id);
+    console.log('Deleting project with ID:', selectedCard);
+    console.log('Projects before deletion:', projectCards);
+
+    const newProjectCards = projectCards.filter((project) => project.id !== selectedCard);
+
+    console.log('Projects after deletion:', newProjectCards);
+
     setProjectCards(newProjectCards);
-    localStorage.setItem('projects', JSON.stringify(newProjectCards));
     setOpenDeleteModal(false);
     setDeleteMode(false);
+    setSelectedCard(null);
   };
 
   const handleDeleteCancel = () => {
-    setOpenDeleteModal(false); // Close modal without deleting
-    setSelectedCard(null); // Reset selected card if the user cancels
+    setOpenDeleteModal(false);
+    setSelectedCard(null);
   };
 
   const settings = {
@@ -161,13 +174,19 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
       {projectCards.length > 0 && (
         <div className='project-cards-container'>
           <Slider {...settings} prevArrow={<CustomPrevArrow />} nextArrow={<CustomNextArrow />}>
-            {projectCards.map((card, index) => (
+            {projectCards.map((project) => (
               <div
-                key={index}
-                className={`project-card ${deleteMode ? 'shake' : ''}`} // Apply shake animation in delete mode
-                onClick={() => handleCardClick(index)} // Handle click in delete mode
+                key={project.id}
+                className={`project-card ${deleteMode ? 'shake' : ''}`}
+                onClick={() => handleCardClick(project.id)}
               >
-                {card}
+                <Link className='link' to={`/${project.projectName}`}>
+                  <div className='project-cards'>
+                    <h1>{project.projectName}</h1>
+                    <h2>{project.projectDesc}</h2>
+                    <h3>Data de entrega: {project.deliveryDate}</h3>
+                  </div>
+                </Link>
                 {deleteMode && <FontAwesomeIcon icon={faCircleXmark} className='delete-icon' />}
               </div>
             ))}
@@ -180,7 +199,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
         <Modal isOpen={openDeleteModal} onClose={handleDeleteCancel}>
           <div className='modal-delete-daily'>
             <p>Tem certeza que deseja excluir esse projeto?</p>
-            <div className='button-container'>
+            <div className='buttons-container'>
               <button className='delete-confirm' onClick={handleDeleteConfirm}>
                 Sim
               </button>

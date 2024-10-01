@@ -1,0 +1,208 @@
+.history-main-container {
+  display: flex;
+  flex-direction: row;
+  margin-left: 160px;
+  margin-top: 20px;
+  padding-left: 20px;
+  transition: 0.15s;
+}
+
+.history-main-container.full-width {
+  margin-left: 0;
+}
+
+/* Estilo da div history-content */
+.history-content {
+  flex: 1;
+  background-color: #eff0f9;
+  border-radius: 5px;
+  margin-right: 15px;
+}
+
+.dailys-container {
+  width: 1030px;
+  height: 472px;
+}
+
+.daily-card {
+  margin-bottom: 20px;
+  border-radius: 5px;
+  padding: 10px;
+  background: #eff0f9;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84, 0.4);
+  height: 200px;
+  width: 100px;
+  box-sizing: border-box;
+}
+
+.daily-card h4 {
+  margin-bottom: 40px;
+}
+
+.daily-card p {
+  margin-bottom: 50px;
+}
+
+.daily-cards {
+  margin-top: 30px;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-height: 380px;
+}
+
+.sprint-details > h1 {
+  margin-top: 30px;
+  margin-left: 50px;
+}
+
+.sprint-details > .evaluation {
+  margin-top: -40px;
+  margin-left: 70%;
+}
+
+/* Estilo da div history-list */
+.history-list {
+  height: 675px;
+  width: 270px;
+  margin-right: 10px;
+  border-radius: 5px;
+  overflow-y: scroll;
+  overflow-x: hidden;
+  background-color: #eff0f9;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 5px;
+  height: 10px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background-color: #273142;
+  border-radius: 10px;
+}
+
+.history-list::-webkit-scrollbar-thumb:hover {
+  background-color: #1b2431;
+}
+
+.history-list::-webkit-scrollbar-track {
+  background-color: #d4d7e6;
+  border-radius: 10px;
+}
+
+.project-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.project-list li {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.project-name {
+  cursor: pointer;
+  padding: 10px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-icon {
+  margin-left: 10px;
+}
+
+.dropdown-toggle {
+  background-color: #eff0f9;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.dropdown-toggle:hover {
+  background-color: #d4d7e6;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: #eff0f9;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-menu li {
+  padding: 10px;
+  border-bottom: 1px solid #ccc;
+}
+
+.dropdown-menu li a {
+  text-decoration: none;
+  color: #333;
+}
+
+.dropdown-menu li a:hover {
+  color: #337ab7;
+}
+
+.dropdown-menu li:last-child {
+  border-bottom: none;
+}
+
+.dropdown.open .dropdown-menu {
+  display: block;
+}
+
+/* Estilo para o tema escuro */
+.dark .history-list {
+  background: #273142;
+  color: #ffffff;
+}
+
+.dark .project-name {
+  color: #ffffff;
+}
+
+.dark .dropdown-toggle {
+  background-color: #273142;
+  color: #ffffff;
+}
+
+.dark .dropdown-menu {
+  background-color: #273142;
+  color: #ffffff;
+  border: 1px solid #333;
+}
+
+.dark .dropdown-menu li {
+  border-bottom: 1px solid #333;
+}
+
+.dark .dropdown-menu li a {
+  color: #ffffff;
+}
+
+.dark .dropdown-menu li a:hover {
+  color: #337ab7;
+}
+
+.dark .history-content {
+  background: #273142;
+  color: #ffffff;
+}
+
+.dark .evaluation-container {
+  background-color: #273142;
+  color: #ffffff;
+}

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+// useProjectCreation.js
+import { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 
 export const formatDate = (date) => {
@@ -16,19 +16,19 @@ export const useProjectCreation = () => {
   const [projectName, setProjectName] = useState('');
   const [projectDesc, setProjectDesc] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
-  const [projectMembers, setProjectMembers] = useState('');
-  const [projectCards, setProjectCards] = useState(JSON.parse(localStorage.getItem('projects') || '[]'));
-  const [year, month, day] = deliveryDate.split('-');
-
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const formattedDate = date.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
+  const [projectMembers, setProjectMembers] = useState([]);
+  const [projectCards, setProjectCards] = useState(() => {
+    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+    console.log('Initial projects loaded:', storedProjects);
+    return storedProjects;
   });
 
+  useEffect(() => {
+    localStorage.setItem('projects', JSON.stringify(projectCards));
+  }, [projectCards]);
+
   const handleCreateProject = () => {
-    if (!projectName || !projectDesc || !deliveryDate || !projectMembers) {
+    if (!projectName || !projectDesc || !deliveryDate || projectMembers.length === 0) {
       return;
     }
 
@@ -37,23 +37,19 @@ export const useProjectCreation = () => {
       id: newProjectId,
       projectName,
       projectDesc,
-      deliveryDate: formattedDate,
+      deliveryDate: formatDate(deliveryDate),
       projectMembers: projectMembers.join(','),
     };
 
-    setProjectCards([...projectCards, newProject]);
-
-    const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    storedProjects.push(newProject);
-    localStorage.setItem('projects', JSON.stringify(storedProjects));
+    setProjectCards((prevCards) => [...prevCards, newProject]);
 
     setProjectName('');
     setProjectDesc('');
     setDeliveryDate('');
-    setProjectMembers('');
+    setProjectMembers([]);
   };
 
-  const isFormValid = projectName && projectDesc && deliveryDate && projectMembers;
+  const isFormValid = projectName && projectDesc && deliveryDate && projectMembers.length > 0;
 
   return {
     projectName,
@@ -65,16 +61,8 @@ export const useProjectCreation = () => {
     projectMembers,
     setProjectMembers,
     handleCreateProject,
-    projectCards: projectCards.map((project) => (
-      <Link className='link' to={`/${project.projectName}`} key={project.projectName}>
-        <div className='project-cards' key={project.projectName}>
-          <h1>{project.projectName}</h1>
-          <h2>{project.projectDesc}</h2>
-          <h3>Data de entrega: {project.deliveryDate}</h3>
-        </div>
-      </Link>
-    )),
-    isFormValid,
+    projectCards,
     setProjectCards,
+    isFormValid,
   };
 };
