@@ -1,0 +1,75 @@
+.login-background {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: linear-gradient(to bottom right, #21172e, #04042d);
+  width: 100vw;
+  height: 100vh;
+}
+
+.login-forms {
+  width: 50%;
+  height: 450px;
+  background: rgba(78, 78, 78, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  -webkit-backdrop-filter: blur(12.9px);
+  backdrop-filter: blur(12.9px);
+  border: 1px solid rgba(78, 78, 78, 0.3);
+  color: #ffffff;
+}
+
+.login-forms h1 {
+  margin-top: 20px;
+  margin-left: 45%;
+}
+
+.login-inputs {
+  margin-top: 30px;
+  margin-left: 120px;
+}
+
+.login-inputs li {
+  margin-top: 30px;
+}
+
+.forgot-password {
+  float: right;
+  margin-right: 23%;
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+.login-inputs input {
+  width: 500px;
+  height: 30px;
+  margin-top: 8px;
+}
+
+.login-button {
+  position: absolute;
+  bottom: 105px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 20px 50px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.create-account-link {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.create-account-link span {
+  color: rgb(17, 17, 173);
+  margin-left: 6px;
+  cursor: pointer;
+}
+
+.link-cadastro {
+  color: rgb(17, 17, 173);
+  text-decoration: none;
+}

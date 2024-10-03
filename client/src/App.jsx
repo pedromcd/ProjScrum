@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './assets/styles/index.css';
+import Login from './pages/Login';
 import Home from './pages/Home';
 import Calendario from './pages/Calendario';
 import Historico from './pages/Historico';
 import Configuracoes from './pages/Configuracoes.jsx';
 import DetalhesProjeto from './pages/DetalhesProjeto.jsx';
+import Cadastro from './pages/Cadastro.jsx';
 
 export default function App() {
   const current_theme = localStorage.getItem('current_theme');
@@ -83,6 +85,8 @@ export default function App() {
             />
           )}
         />
+        <Route path='/login' exact Component={() => <Login />} />
+        <Route path='/cadastro' exact Component={() => <Cadastro />} />
       </Routes>
     </BrowserRouter>
   );

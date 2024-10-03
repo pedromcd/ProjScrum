@@ -1,0 +1,80 @@
+.cadastro-background {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-image: linear-gradient(to bottom right, #21172e, #04042d);
+  width: 100vw;
+  height: 100vh;
+}
+
+.cadastro-forms {
+  width: 65%;
+  height: 520px;
+  background: rgba(78, 78, 78, 0.14);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  -webkit-backdrop-filter: blur(12.9px);
+  backdrop-filter: blur(12.9px);
+  border: 1px solid rgba(78, 78, 78, 0.3);
+  color: #ffffff;
+}
+
+.have-account {
+  float: left;
+  height: 100%;
+  width: 40%;
+  border-right: 1px solid rgb(255, 255, 255, 0.19);
+}
+
+.have-account h1 {
+  margin-top: 120px;
+  margin-left: 9%;
+}
+
+.have-account button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 50px;
+  margin-left: 30%;
+  padding: 20px 50px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.link-login {
+  color: black;
+  text-decoration: none;
+}
+
+.cadastro-area {
+  float: right;
+  height: 100%;
+  width: 60%;
+}
+
+.cadastro-area h1 {
+  margin-top: 20px;
+  margin-left: 37%;
+}
+
+.cadastro-inputs {
+  margin-left: 8%;
+}
+
+.cadastro-inputs li {
+  margin-top: 28px;
+}
+
+.cadastro-inputs input {
+  width: 500px;
+  height: 30px;
+}
+
+.cadastro-button {
+  margin-top: 50px;
+  margin-left: 35%;
+  padding: 20px 50px;
+  border-radius: 5px;
+  cursor: pointer;
+}
