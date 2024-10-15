@@ -20,11 +20,18 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
   const location = useLocation();
 
   const [projectNames, setProjectNames] = useState([]);
+  const [userName, setUserName] = useState('');
+  const [userImage, setUserImage] = useState('');
 
   useEffect(() => {
     const storedProjects = getStoredProjects();
     const names = storedProjects.map((project) => project.projectName);
     setProjectNames(names);
+
+    const storedUserName = localStorage.getItem('userName');
+    const storedUserImage = localStorage.getItem('image');
+    if (storedUserName) setUserName(storedUserName);
+    if (storedUserImage) setUserImage(storedUserImage);
   }, []);
 
   let currentPageName = pageNameMapping[location.pathname];
@@ -53,10 +60,25 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
           <FontAwesomeIcon icon={faBell} />
         </span>
 
-        <Avatar className='avatar'>LG</Avatar>
+        {userImage ? (
+          <Avatar className='avatar' sx={{ width: 50, height: 50 }} src={userImage} />
+        ) : (
+          <Avatar className='avatar' sx={{ width: 50, height: 50 }}>
+            {userName && userName.trim() !== ''
+              ? userName
+                  .split(' ')
+                  .filter((name) => name.length > 2) // Filtra palavras com mais de 2 caracteres
+                  .map((name, index, array) =>
+                    index === 0 || index === array.length - 1 ? name[0].toUpperCase() : ''
+                  )
+                  .join('')
+                  .slice(0, 2)
+              : ''}
+          </Avatar>
+        )}
 
         <ul className='user-info-list'>
-          <li className='info-list-name'>Nome Usuario</li>
+          <li className='info-list-name'>{userName}</li>
           <li className='info-list-position'>Cargo</li>
         </ul>
       </div>

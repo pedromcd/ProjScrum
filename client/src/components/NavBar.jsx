@@ -1,6 +1,12 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClockRotateLeft, faGear, faSquarePollVertical, faMoon } from '@fortawesome/free-solid-svg-icons';
+import {
+  faClockRotateLeft,
+  faGear,
+  faSquarePollVertical,
+  faMoon,
+  faUserPlus,
+} from '@fortawesome/free-solid-svg-icons';
 import { faCalendar, faSun } from '@fortawesome/free-regular-svg-icons';
 import { Link } from 'react-router-dom';
 import '../assets/styles/Navbar.css';
@@ -47,6 +53,12 @@ const Navbar = ({ theme, setTheme, isVisible }) => {
                 </span>
                 Histórico
               </Link>
+            </li>
+            <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
+              <span className='icon-wrapper-navbar'>
+                <FontAwesomeIcon icon={faUserPlus} />
+              </span>
+              Criar Usuário Gerente
             </li>
             <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
               <Link to={'/settings'} className='link'>

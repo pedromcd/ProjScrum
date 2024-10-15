@@ -1,0 +1,82 @@
+.settings-main-container {
+  position: relative;
+  margin-left: 220px;
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.settings-main-container.full-width {
+  margin-left: 80px;
+}
+
+.account-settings {
+  max-width: calc(100% - 200px);
+}
+
+.profile-picture {
+  position: absolute;
+  top: 0px;
+  right: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 150px;
+}
+
+.settings-list li:nth-child(1),
+.settings-list li:nth-child(2) {
+  margin-bottom: 20px;
+}
+
+.settings-list li:nth-child(2) {
+  margin-bottom: 50px;
+}
+
+.settings-list li:nth-child(3),
+.settings-list li:nth-child(4) {
+  margin-bottom: 20px;
+}
+
+.settings-list input {
+  width: 500px;
+  height: 30px;
+  margin-top: 5px;
+}
+
+.buttons button {
+  border-radius: 5px;
+  padding: 10px;
+  font-size: 15px;
+  margin-top: 12px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  background-color: #eff0f9;
+  cursor: pointer;
+}
+
+.save-button {
+  position: relative;
+  bottom: -225px;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  color: #ffffff;
+  background-color: #4caf50;
+  cursor: pointer;
+}
+
+.buttons input {
+  display: none;
+}
+
+.dark .settings-main-container {
+  color: #ffffff;
+}
+
+.dark .settings-main-container input,
+.dark .settings-main-container .buttons button,
+.dark .save-button {
+  box-shadow: 1px 1px 5px black;
+}
