@@ -39,7 +39,7 @@
 
 .list-navbar {
   padding-top: 25px;
-  margin-top: 120px;
+  margin-top: 90px;
   margin-left: -12px;
   width: auto;
   display: flex;
@@ -73,6 +73,57 @@
   bottom: 50px;
   left: 60px;
   cursor: pointer;
+}
+
+.modal-manager-inputs {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  top: -120px;
+  left: -20px;
+}
+
+.modal-manager-inputs h2 {
+  margin-bottom: 20px;
+}
+
+.manager-inputs {
+  display: flex;
+  flex-direction: column;
+}
+
+.manager-inputs li {
+  margin-bottom: 35px;
+}
+
+.manager-inputs input {
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  border-radius: 6px;
+  height: 40px;
+  padding: 10px;
+  width: 250px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.modal-buttons button {
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+}
+
+.dark .modal-manager-inputs input {
+  color: #ffffff;
+  border: 1px solid #ffffff;
+}
+
+.dark .modal-buttons button {
+  color: black;
 }
 
 .dark .navbar {

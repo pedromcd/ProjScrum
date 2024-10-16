@@ -20,6 +20,11 @@
   text-decoration: none;
 }
 
+.manager-inputs select {
+  margin-top: 5px;
+  height: 38px;
+}
+
 .container.dark {
   background: #1b2431;
 }

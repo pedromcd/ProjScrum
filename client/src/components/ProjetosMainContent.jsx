@@ -1,5 +1,5 @@
 // ProjetosMainContent.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import '../assets/styles/ProjetosMainContent.css';
@@ -33,12 +33,12 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     isFormValid,
   } = useProjectCreation();
 
-  useEffect(() => {
-    console.log('Current projectCards:', projectCards);
-  }, [projectCards]);
-
   const handleCreateProjectAndCloseModal = () => {
     handleCreateProject();
+    setOpenModal(false);
+  };
+
+  const handleCloseModal = () => {
     setOpenModal(false);
   };
 
@@ -167,6 +167,9 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
             disabled={!isFormValid}
           >
             Criar
+          </button>
+          <button className='cancel-project' onClick={handleCloseModal}>
+            Cancelar
           </button>
         </div>
       </Modal>

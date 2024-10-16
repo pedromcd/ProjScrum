@@ -19,7 +19,6 @@ export const useProjectCreation = () => {
   const [projectMembers, setProjectMembers] = useState([]);
   const [projectCards, setProjectCards] = useState(() => {
     const storedProjects = JSON.parse(localStorage.getItem('projects') || '[]');
-    console.log('Initial projects loaded:', storedProjects);
     return storedProjects;
   });
 

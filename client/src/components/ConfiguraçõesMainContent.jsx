@@ -69,17 +69,37 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible }) => {
     }
   };
 
+  const getInputColor = (fieldName) => {
+    return formData[fieldName] && document.activeElement.name !== fieldName ? 'grey' : 'black';
+  };
+
   return (
     <div className={`settings-main-container ${isNavbarVisible ? '' : 'full-width'}`}>
       <div className='account-settings'>
         <ul className='settings-list'>
           <li>
             <p>Nome</p>
-            <input type='text' name='nome' onChange={handleInputChange} placeholder='Nome' />
+            <input
+              type='text'
+              name='nome'
+              value={formData.nome}
+              onChange={handleInputChange}
+              onFocus={(e) => e.target.select()}
+              placeholder='Nome'
+              style={{ color: getInputColor('nome') }}
+            />
           </li>
           <li>
             <p>Email</p>
-            <input type='text' name='email' onChange={handleInputChange} placeholder='Email' />
+            <input
+              type='text'
+              name='email'
+              value={formData.email}
+              onChange={handleInputChange}
+              onFocus={(e) => e.target.select()}
+              placeholder='Email'
+              style={{ color: getInputColor('email') }}
+            />
           </li>
           <li>
             <p>Senha</p>

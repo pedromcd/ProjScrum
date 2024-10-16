@@ -67,8 +67,18 @@ select {
   position: fixed;
   bottom: 60px;
   border-radius: 6px;
-  right: 35.5%;
-  padding: 10px 50px;
+  right: 55%;
+  padding: 10px 40px;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  cursor: pointer;
+}
+
+.cancel-project {
+  position: fixed;
+  bottom: 60px;
+  border-radius: 6px;
+  right: 20%;
+  padding: 10px 40px;
   box-shadow: 1px 1px 5px rgb(84, 84, 84);
   cursor: pointer;
 }

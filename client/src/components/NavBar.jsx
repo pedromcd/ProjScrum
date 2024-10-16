@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClockRotateLeft,
@@ -10,8 +10,11 @@ import {
 import { faCalendar, faSun } from '@fortawesome/free-regular-svg-icons';
 import { Link } from 'react-router-dom';
 import '../assets/styles/Navbar.css';
+import { ModalContext } from '../App';
 
 const Navbar = ({ theme, setTheme, isVisible }) => {
+  const { setOpenModal } = useContext(ModalContext);
+
   const toggle_mode = () => {
     theme == 'light' ? setTheme('dark') : setTheme('light');
   };
@@ -55,10 +58,10 @@ const Navbar = ({ theme, setTheme, isVisible }) => {
               </Link>
             </li>
             <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
-              <span className='icon-wrapper-navbar'>
+              <span className='icon-wrapper-navbar' onClick={() => setOpenModal(true)}>
                 <FontAwesomeIcon icon={faUserPlus} />
               </span>
-              Criar Usuário Gerente
+              <span onClick={() => setOpenModal(true)}>Criar Usuário Gerente</span>
             </li>
             <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
               <Link to={'/settings'} className='link'>
