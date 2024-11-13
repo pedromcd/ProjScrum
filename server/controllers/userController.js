@@ -184,3 +184,62 @@ export const updateUser = async (req, res) => {
     res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const query = 'SELECT id, nome, email FROM usuarios';
+    const users = await new Promise((resolve, reject) => {
+      conexao.query(query, (error, results) => {
+        if (error) reject(error);
+        resolve(results);
+      });
+    });
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error('Erro ao buscar usuários:', error);
+    res.status(500).json({ error: 'Erro ao buscar usuários' });
+  }
+};
+
+export const updateUserRole = async (req, res) => {
+  const { userId, role } = req.body;
+
+  try {
+    // Validate input
+    if (!userId || !role) {
+      return res.status(400).json({ error: 'Usuário e cargo são obrigatórios' });
+    }
+
+    // Update user role in the database
+    const updateQuery = 'UPDATE usuarios SET cargo = ? WHERE id = ?';
+    const result = await new Promise((resolve, reject) => {
+      conexao.query(updateQuery, [role, userId], (error, results) => {
+        if (error) reject(error);
+        resolve(results);
+      });
+    });
+
+    // Check if any rows were actually updated
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Fetch the updated user to return
+    const getUserQuery = 'SELECT id, nome, email, cargo FROM usuarios WHERE id = ?';
+    const [updatedUser] = await new Promise((resolve, reject) => {
+      conexao.query(getUserQuery, [userId], (error, results) => {
+        if (error) reject(error);
+        resolve(results);
+      });
+    });
+
+    res.status(200).json({
+      message: 'Cargo do usuário atualizado com sucesso',
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar cargo do usuário:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};

@@ -1,5 +1,5 @@
 // ProjetosMainContent.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import '../assets/styles/ProjetosMainContent.css';
@@ -10,14 +10,14 @@ import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
 import { Link } from 'react-router-dom';
+import Select from 'react-select';
+import { userService } from '../services/api'; // Add this import
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
-  const [memberName, setMemberName] = useState('');
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-
   const {
     projectName,
     setProjectName,
@@ -32,9 +32,57 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     setProjectCards,
     isFormValid,
   } = useProjectCreation();
+  const [userOptions, setUserOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const users = await userService.getAllUsers();
+        const formattedUserOptions = users.map((user) => ({
+          value: user.id,
+          label: user.nome,
+        }));
+        setUserOptions(formattedUserOptions);
+      } catch (error) {
+        console.error('Erro ao carregar usuários', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  const handleMemberChange = (selectedMembers) => {
+    // Convert selected members to an array of labels
+    const memberNames = selectedMembers.map((member) => member.label);
+    setProjectMembers(selectedMembers);
+  };
 
   const handleCreateProjectAndCloseModal = () => {
-    handleCreateProject();
+    // Convert selected members to a comma-separated string
+    const projectMembersString = projectMembers.map((member) => member.label).join(',');
+
+    // Create the project with the members string
+    const newProject = {
+      id: Date.now(), // or use a more robust ID generation method
+      projectName,
+      projectDesc,
+      deliveryDate,
+      projectMembers: projectMembersString, // Store as a string
+    };
+
+    // Add the project to local storage or your state management
+    const existingProjects = JSON.parse(localStorage.getItem('projects')) || [];
+    const updatedProjects = [...existingProjects, newProject];
+    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+
+    // Update project cards state
+    setProjectCards(updatedProjects);
+
+    // Reset form and close modal
+    setProjectName('');
+    setProjectDesc('');
+    setDeliveryDate('');
+    setProjectMembers([]);
     setOpenModal(false);
   };
 
@@ -149,18 +197,12 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
             </li>
             <li>
               <p>Adicionar membros</p>
-              <input
-                className='select-members'
-                type='text'
-                placeholder='Aperte enter para adicionar'
-                value={memberName}
-                onChange={(e) => setMemberName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    setProjectMembers([...projectMembers, memberName]);
-                    setMemberName('');
-                  }
-                }}
+              <Select
+                isMulti
+                options={userOptions}
+                value={projectMembers}
+                onChange={handleMemberChange}
+                placeholder='Selecione os membros do projeto'
               />
             </li>
           </ul>

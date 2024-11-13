@@ -168,8 +168,10 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
   useEffect(() => {
     if (project && project.projectMembers) {
       const colors = {};
-      project.projectMembers.split(',').forEach((member) => {
-        colors[member] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+      // Split the members string and create colors
+      const members = project.projectMembers.split(',');
+      members.forEach((member) => {
+        colors[member.trim()] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
       });
       setState((prevState) => ({ ...prevState, avatarColors: colors }));
     }
@@ -261,11 +263,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         <Tooltip
           title={
             <div style={{ columnCount: 1, maxHeight: 200, overflowY: 'auto' }}>
-              {project.projectMembers.split(',').map((member, index) => (
-                <div key={index} style={{ marginBottom: 8 }}>
-                  {member}
-                </div>
-              ))}
+              {project.projectMembers &&
+                project.projectMembers.split(',').map((member, index) => (
+                  <div key={index} style={{ marginBottom: 8 }}>
+                    {member.trim()}
+                  </div>
+                ))}
             </div>
           }
           placement='right'
@@ -273,8 +276,8 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           <AvatarGroup max={4}>
             {project.projectMembers &&
               project.projectMembers.split(',').map((member, index) => (
-                <Avatar key={index} {...stringAvatar(member)}>
-                  {member.charAt(0).toUpperCase()}
+                <Avatar key={index} {...stringAvatar(member.trim())}>
+                  {member.trim().charAt(0).toUpperCase()}
                 </Avatar>
               ))}
           </AvatarGroup>

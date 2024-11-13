@@ -57,4 +57,24 @@ export const userService = {
       throw error.response?.data || new Error('Erro ao atualizar usuário');
     }
   },
+
+  getAllUsers: async () => {
+    try {
+      const response = await api.get('/usuarios');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar usuários:', error);
+      throw error.response?.data || new Error('Erro ao buscar usuários');
+    }
+  },
+
+  updateUserRole: async (userData) => {
+    try {
+      const response = await api.put('/update-user-role', userData);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao atualizar cargo do usuário:', error.response?.data || error);
+      throw error.response?.data || new Error('Erro ao atualizar cargo do usuário');
+    }
+  },
 };

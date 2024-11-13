@@ -15,9 +15,6 @@ import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import { userService } from './services/api'; // Import the userService
 
 export const ModalContext = createContext();
-const userList = [
-  //Lista de usuarios para o componente <Select /> no modal
-];
 
 export default function App() {
   const current_theme = localStorage.getItem('current_theme');
@@ -26,6 +23,30 @@ export default function App() {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [userList, setUserList] = useState([]);
+  const [selectedRole, setSelectedRole] = useState('usuario');
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const users = await userService.getAllUsers();
+
+        // Transform users to match react-select format
+        const formattedUserList = users.map((user) => ({
+          value: user.id,
+          label: user.nome, // or user.email, depending on what you want to display
+        }));
+
+        setUserList(formattedUserList);
+      } catch (error) {
+        console.error('Erro ao carregar usuários', error);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const toggleNavbar = () => {
     setNavbarVisible(!isNavbarVisible);
@@ -63,10 +84,41 @@ export default function App() {
   const [openModal, setOpenModal] = useState(false);
   const [newManager, setNewManager] = useState({ user: '', position: '' });
 
-  const handleCreateManager = () => {
-    console.log('New manager:', newManager);
-    setOpenModal(false);
-    setNewManager({ user: '', position: '' });
+  const handleCreateManager = async () => {
+    // Validate inputs
+    if (!selectedOption) {
+      setError('Por favor, selecione um usuário');
+      return;
+    }
+
+    try {
+      // Clear previous messages
+      setError('');
+      setSuccess('');
+
+      // Call API to update user role
+      const response = await userService.updateUserRole({
+        userId: selectedOption.value,
+        role: selectedRole,
+      });
+
+      // Update success message
+      setSuccess('Cargo do usuário atualizado com sucesso');
+
+      // Optional: Update the local user list to reflect the change
+      const updatedUserList = userList.map((user) =>
+        user.value === selectedOption.value ? { ...user, role: selectedRole } : user
+      );
+      setUserList(updatedUserList);
+
+      // Close modal and reset selections
+      setOpenModal(false);
+      setSelectedOption(null);
+      setSelectedRole('usuario');
+    } catch (err) {
+      // Handle any errors
+      setError(err.message || 'Erro ao atualizar cargo do usuário');
+    }
   };
 
   const handleChange = (selectedOption) => {
@@ -170,11 +222,16 @@ export default function App() {
             <ul className='manager-inputs'>
               <li>
                 <p>Usuário</p>
-                <Select options={userList} value={selectedOption} onChange={handleChange} />
+                <Select
+                  options={userList}
+                  value={selectedOption}
+                  onChange={setSelectedOption}
+                  placeholder='Selecione um usuário'
+                />
               </li>
               <li>
                 <p>Cargo</p>
-                <select>
+                <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
                   <option value='usuario'>Usuário</option>
                   <option value='gerente'>Gerente</option>
                 </select>
