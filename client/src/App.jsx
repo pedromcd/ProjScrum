@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './assets/styles/index.css';
 import Login from './pages/Login';
 import Home from './pages/Home';
@@ -10,6 +10,9 @@ import DetalhesProjeto from './pages/DetalhesProjeto.jsx';
 import Cadastro from './pages/Cadastro.jsx';
 import Modal from './components/Modal.jsx';
 import Select from 'react-select';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
+import { userService } from './services/api'; // Import the userService
 
 export const ModalContext = createContext();
 const userList = [
@@ -21,6 +24,8 @@ export default function App() {
   const [theme, setTheme] = useState(current_theme ? current_theme : 'light');
   const [isNavbarVisible, setNavbarVisible] = useState(true);
   const [selectedOption, setSelectedOption] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const toggleNavbar = () => {
     setNavbarVisible(!isNavbarVisible);
@@ -29,6 +34,31 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('current_theme', theme);
   }, [theme]);
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        await userService.getCurrentUser();
+        setIsAuthenticated(true);
+      } catch (error) {
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
+  // Private Route Component
+  const PrivateRoute = ({ children }) => {
+    if (isLoading) {
+      return <div>Carregando...</div>;
+    }
+
+    return isAuthenticated ? children : <Navigate to='/login' />;
+  };
 
   const [openModal, setOpenModal] = useState(false);
   const [newManager, setNewManager] = useState({ user: '', position: '' });
@@ -43,75 +73,98 @@ export default function App() {
     setSelectedOption(selectedOption);
   };
 
+  const handleCloseModal = () => {
+    setOpenModal(false);
+  };
+
+  if (isLoading) {
+    return <div>Carregando...</div>; // Or a loading spinner
+  }
+
   return (
     <ModalContext.Provider value={{ setOpenModal }}>
       <BrowserRouter>
         <Routes>
           <Route
             path='/'
-            exact
-            Component={() => (
-              <Home
-                theme={theme}
-                setTheme={setTheme}
-                isNavbarVisible={isNavbarVisible}
-                toggleNavbar={toggleNavbar}
-              />
-            )}
+            element={
+              <PrivateRoute>
+                <Home
+                  theme={theme}
+                  setTheme={setTheme}
+                  isNavbarVisible={isNavbarVisible}
+                  toggleNavbar={toggleNavbar}
+                  setIsAuthenticated={setIsAuthenticated}
+                />
+              </PrivateRoute>
+            }
           />
           <Route
             path='/calendar'
-            exact
-            Component={() => (
-              <Calendario
-                theme={theme}
-                setTheme={setTheme}
-                isNavbarVisible={isNavbarVisible}
-                toggleNavbar={toggleNavbar}
-              />
-            )}
+            element={
+              <PrivateRoute>
+                <Calendario
+                  theme={theme}
+                  setTheme={setTheme}
+                  isNavbarVisible={isNavbarVisible}
+                  toggleNavbar={toggleNavbar}
+                  setIsAuthenticated={setIsAuthenticated}
+                />
+              </PrivateRoute>
+            }
           />
           <Route
             path='/history'
-            exact
-            Component={() => (
-              <Historico
-                theme={theme}
-                setTheme={setTheme}
-                isNavbarVisible={isNavbarVisible}
-                toggleNavbar={toggleNavbar}
-              />
-            )}
+            element={
+              <PrivateRoute>
+                <Historico
+                  theme={theme}
+                  setTheme={setTheme}
+                  isNavbarVisible={isNavbarVisible}
+                  toggleNavbar={toggleNavbar}
+                  setIsAuthenticated={setIsAuthenticated}
+                />
+              </PrivateRoute>
+            }
           />
           <Route
             path='/settings'
-            exact
-            Component={() => (
-              <Configuracoes
-                theme={theme}
-                setTheme={setTheme}
-                isNavbarVisible={isNavbarVisible}
-                toggleNavbar={toggleNavbar}
-              />
-            )}
+            element={
+              <PrivateRoute>
+                <Configuracoes
+                  theme={theme}
+                  setTheme={setTheme}
+                  isNavbarVisible={isNavbarVisible}
+                  toggleNavbar={toggleNavbar}
+                  setIsAuthenticated={setIsAuthenticated}
+                />
+              </PrivateRoute>
+            }
           />
           <Route
             path='/:projectName'
-            exact
-            Component={() => (
-              <DetalhesProjeto
-                theme={theme}
-                setTheme={setTheme}
-                isNavbarVisible={isNavbarVisible}
-                toggleNavbar={toggleNavbar}
-              />
-            )}
+            element={
+              <PrivateRoute>
+                <DetalhesProjeto
+                  theme={theme}
+                  setTheme={setTheme}
+                  isNavbarVisible={isNavbarVisible}
+                  toggleNavbar={toggleNavbar}
+                  setIsAuthenticated={setIsAuthenticated}
+                />
+              </PrivateRoute>
+            }
           />
-          <Route path='/login' exact Component={() => <Login />} />
-          <Route path='/cadastro' exact Component={() => <Cadastro />} />
+
+          {/* Public Routes */}
+          <Route path='/login' element={<Login setIsAuthenticated={setIsAuthenticated} />} />
+          <Route path='/cadastro' element={<Cadastro />} />
         </Routes>
 
         <Modal isOpen={openModal}>
+          <div className='modal-close-button' onClick={handleCloseModal}>
+            <FontAwesomeIcon icon={faCircleXmark} />
+          </div>
           <div className='modal-manager-inputs'>
             <h2>Criar Usuário Gerente</h2>
             <ul className='manager-inputs'>

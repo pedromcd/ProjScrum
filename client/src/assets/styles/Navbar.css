@@ -64,15 +64,23 @@
   margin-right: 13px;
 }
 
-.button-to-dark-mode {
+.button-to-dark-mode,
+.logout-button {
   font-size: 40px;
   display: flex;
   justify-content: center;
   align-items: center;
   position: fixed;
-  bottom: 50px;
   left: 60px;
   cursor: pointer;
+}
+
+.button-to-dark-mode {
+  bottom: 140px; /* Adjust this value to control spacing */
+}
+
+.logout-button {
+  bottom: 40px;
 }
 
 .modal-manager-inputs {

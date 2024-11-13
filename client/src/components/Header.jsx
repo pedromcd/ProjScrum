@@ -4,6 +4,7 @@ import { faBell, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@mui/material';
 import '../assets/styles/Header.css';
 import { useLocation } from 'react-router-dom';
+import { userService } from '../services/api';
 
 const getStoredProjects = () => {
   return JSON.parse(localStorage.getItem('projects')) || [];
@@ -27,11 +28,20 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
     const storedProjects = getStoredProjects();
     const names = storedProjects.map((project) => project.projectName);
     setProjectNames(names);
+  }, []);
 
-    const storedUserName = localStorage.getItem('userName');
-    const storedUserImage = localStorage.getItem('image');
-    if (storedUserName) setUserName(storedUserName);
-    if (storedUserImage) setUserImage(storedUserImage);
+  useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const userData = await userService.getCurrentUser();
+        setUserName(userData.nome);
+        setUserImage(userData.imagem);
+      } catch (error) {
+        console.error('Erro ao carregar dados do usuário', error);
+      }
+    };
+
+    loadUserData();
   }, []);
 
   let currentPageName = pageNameMapping[location.pathname];

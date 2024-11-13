@@ -6,7 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import Modal from './Modal';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faCircleXmark, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 
 const CalendarioMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
@@ -148,6 +148,9 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
         </span>
       </div>
       <Modal isOpen={openModal}>
+        <div className='modal-close-button' onClick={() => setOpenModal(false)}>
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-event-inputs'>
           <ul className='event-inputs'>
             <li>

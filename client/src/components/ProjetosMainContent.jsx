@@ -120,6 +120,9 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
       </button>
 
       <Modal isOpen={openModal}>
+        <div className='modal-close-button' onClick={handleCloseModal}>
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-project-inputs'>
           <ul className='project-inputs'>
             <li>

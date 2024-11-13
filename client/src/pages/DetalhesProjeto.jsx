@@ -4,7 +4,7 @@ import Header from '../components/Header';
 import ProjectDetails from '../components/ProjectDetails';
 import { useParams } from 'react-router-dom';
 
-const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar }) => {
+const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) => {
   const { projectName } = useParams();
   const [project, setProject] = useState(null);
   const getStoredProjects = () => {
@@ -23,7 +23,12 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar }) => 
   return (
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
-      <Navbar theme={theme} setTheme={setTheme} isVisible={isNavbarVisible} />
+      <Navbar
+        theme={theme}
+        setTheme={setTheme}
+        isVisible={isNavbarVisible}
+        setIsAuthenticated={setIsAuthenticated}
+      />
       {project && <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} />}
     </div>
   );

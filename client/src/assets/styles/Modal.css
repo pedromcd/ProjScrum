@@ -21,6 +21,20 @@
   box-shadow: 1px 1px 5px rgb(61, 61, 61);
 }
 
+.modal-close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 24px;
+  color: #666;
+  transition: color 0.3s ease;
+}
+
+.modal-close-button:hover {
+  color: #000;
+}
+
 .dark .modal-container {
   background: #273142;
   color: #ffffff;

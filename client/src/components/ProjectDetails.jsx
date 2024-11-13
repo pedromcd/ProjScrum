@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import '../assets/styles/ProjectDetails.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import Modal from './Modal';
 import { Avatar, AvatarGroup, Tooltip } from '@mui/material';
 import { formatDate } from '../utils/generateCard';
@@ -308,6 +308,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </div>
 
       <Modal isOpen={state.openSprintModal}>
+        <div
+          className='modal-close-button'
+          onClick={() => setState((prev) => ({ ...prev, openSprintModal: false }))}
+        >
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-sprint-inputs'>
           <ul className='sprint-inputs'>
             <li>
@@ -336,6 +342,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </Modal>
 
       <Modal isOpen={state.openDailyModal}>
+        <div
+          className='modal-close-button'
+          onClick={() => setState((prev) => ({ ...prev, openDailyModal: false }))} // Correctly closes the Daily modal
+        >
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-daily-inputs'>
           <ul className='daily-inputs'>
             <li>
@@ -397,6 +409,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </Modal>
 
       <Modal isOpen={state.evaluationModalOpen}>
+        <div
+          className='modal-close-button'
+          onClick={() => setState((prev) => ({ ...prev, evaluationModalOpen: false }))} // Correctly closes the Evaluation modal
+        >
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-evaluation-inputs'>
           <ul className='evaluation-inputs'>
             <li>
@@ -452,6 +470,12 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </Modal>
 
       <Modal isOpen={openDeleteModal}>
+        <div
+          className='modal-close-button'
+          onClick={handleDeleteCancel} // Correctly closes the Delete modal
+        >
+          <FontAwesomeIcon icon={faCircleXmark} />
+        </div>
         <div className='modal-delete-daily'>
           <p>Tem certeza que deseja excluir essa daily?</p>
           <div className='buttons-container'>

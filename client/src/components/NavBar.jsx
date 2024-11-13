@@ -6,17 +6,46 @@ import {
   faSquarePollVertical,
   faMoon,
   faUserPlus,
+  faRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons';
 import { faCalendar, faSun } from '@fortawesome/free-regular-svg-icons';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import '../assets/styles/Navbar.css';
 import { ModalContext } from '../App';
+import { userService } from '../services/api';
 
-const Navbar = ({ theme, setTheme, isVisible }) => {
+const Navbar = ({
+  theme,
+  setTheme,
+  isVisible,
+  setIsAuthenticated = () => {}, // Default no-op function
+}) => {
   const { setOpenModal } = useContext(ModalContext);
+  const navigate = useNavigate();
 
   const toggle_mode = () => {
     theme == 'light' ? setTheme('dark') : setTheme('light');
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Call the logout service
+      await userService.logout();
+
+      // Update authentication state
+      setIsAuthenticated(false);
+
+      // Remove any stored user data
+      localStorage.removeItem('userName');
+      localStorage.removeItem('image');
+      localStorage.removeItem('formData');
+
+      // Redirect to login page
+      navigate('/login');
+    } catch (error) {
+      console.error('Logout failed', error);
+      // Optional: Add error handling, such as showing a toast message
+    }
   };
 
   return (
@@ -24,12 +53,10 @@ const Navbar = ({ theme, setTheme, isVisible }) => {
       {isVisible && (
         <div>
           <span className='button-to-dark-mode'>
-            <FontAwesomeIcon
-              icon={theme === 'light' ? faMoon : faSun}
-              onClick={() => {
-                toggle_mode();
-              }}
-            />
+            <FontAwesomeIcon icon={theme === 'light' ? faMoon : faSun} onClick={toggle_mode} />
+          </span>
+          <span className='logout-button' onClick={handleLogout}>
+            <FontAwesomeIcon icon={faRightFromBracket} />
           </span>
 
           <ul className='list-navbar'>
