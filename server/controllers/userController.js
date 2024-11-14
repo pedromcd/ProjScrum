@@ -10,14 +10,12 @@ export const cadastrarUser = async (req, res) => {
   try {
     // Check if user already exists
     const checkUserQuery = 'SELECT * FROM usuarios WHERE email = ?';
-    const [existingUsers] = await new Promise((resolve, reject) => {
-      conexao.query(checkUserQuery, [email], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const existingUsers = await conexao.execute({
+      sql: checkUserQuery,
+      args: [email],
     });
 
-    if (existingUsers) {
+    if (existingUsers.rows.length > 0) {
       return res.status(400).json({ error: 'Usuário já cadastrado' });
     }
 
@@ -27,11 +25,9 @@ export const cadastrarUser = async (req, res) => {
 
     // Insert new user
     const insertUserQuery = 'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)';
-    await new Promise((resolve, reject) => {
-      conexao.query(insertUserQuery, [nome, email, hashedPassword], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    await conexao.execute({
+      sql: insertUserQuery,
+      args: [nome, email, hashedPassword],
     });
 
     res.status(201).json({ message: 'Usuário cadastrado com sucesso' });
@@ -46,19 +42,18 @@ export const logar = async (req, res) => {
 
   try {
     const findUserQuery = 'SELECT * FROM usuarios WHERE email = ?';
-
-    const [user] = await new Promise((resolve, reject) => {
-      conexao.query(findUserQuery, [email], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const userResult = await conexao.execute({
+      sql: findUserQuery,
+      args: [email],
     });
 
-    if (!user) {
+    if (userResult.rows.length === 0) {
       return res.status(401).json({ error: 'Usuário não encontrado' });
     }
 
+    const user = userResult.rows[0];
     const isPasswordValid = await bcrypt.compare(senha, user.senha);
+
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Senha incorreta' });
     }
@@ -69,7 +64,7 @@ export const logar = async (req, res) => {
     setCookieToken(res, token);
 
     res.status(200).json({
-      id: user.id, // Use 'id' instead of 'codigoUser'
+      id: user.id,
       nome: user.nome,
       email: user.email,
     });
@@ -85,7 +80,8 @@ export const logout = (req, res) => {
     res.clearCookie('auth_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'None',
+      sameSite: 'Lax',
+      path: '/',
     });
 
     res.status(200).json({ message: 'Logout realizado com sucesso' });
@@ -95,56 +91,52 @@ export const logout = (req, res) => {
   }
 };
 
-export const usuarioLogado = (req, res) => {
+export const usuarioLogado = async (req, res) => {
   const token = req.cookies.auth_token;
 
   if (!token) {
     return res.status(401).json({ error: 'Usuário não autenticado' });
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      console.error('Erro ao verificar token:', err);
-      return res.status(401).json({ error: 'Token inválido' });
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const sqlUserData = 'SELECT id, nome, email, imagem FROM usuarios WHERE email = ?';
+    const userResult = await conexao.execute({
+      sql: sqlUserData,
+      args: [decoded.email],
+    });
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    const sqlUserData = 'SELECT id as codigoUser, nome, email, imagem FROM usuarios WHERE email = ?';
-    conexao.query(sqlUserData, [decoded.email], (error, results) => {
-      if (error) {
-        return res.status(500).json({ error: 'Erro ao buscar os dados do usuário' });
-      }
-      if (results.length < 1) {
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-      }
-
-      res.status(200).json(results[0]);
-    });
-  });
+    res.status(200).json(userResult.rows[0]);
+  } catch (err) {
+    console.error('Erro ao verificar token:', err);
+    return res.status(401).json({ error: 'Token inválido' });
+  }
 };
 
 export const updateUser = async (req, res) => {
-  const { id } = req.user; // Ensure you get the user ID from the token
-  const { nome, senha, imagem, email } = req.body; // Include email
+  const { id } = req.user;
+  const { nome, senha, imagem, email } = req.body;
 
   try {
-    // If password is provided, hash it
     let hashedPassword;
     if (senha) {
       const saltRounds = 10;
       hashedPassword = await bcrypt.hash(senha, saltRounds);
     }
 
-    // Prepare the update query
-    let query = 'UPDATE usuarios SET nome = ?, email = ?'; // Update email
-    let params = [nome, email]; // Include email in params
+    let query = 'UPDATE usuarios SET nome = ?, email = ?';
+    let params = [nome, email];
 
-    // Add password update if provided
     if (senha) {
       query += ', senha = ?';
       params.push(hashedPassword);
     }
 
-    // Add image update if provided
     if (imagem) {
       query += ', imagem = ?';
       params.push(imagem);
@@ -153,31 +145,24 @@ export const updateUser = async (req, res) => {
     query += ' WHERE id = ?';
     params.push(id);
 
-    // Execute the update
-    const result = await new Promise((resolve, reject) => {
-      conexao.query(query, params, (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const result = await conexao.execute({
+      sql: query,
+      args: params,
     });
 
-    // Check if any rows were actually updated
-    if (result.affectedRows === 0) {
+    if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Fetch updated user data
     const getUserQuery = 'SELECT id, nome, email, imagem FROM usuarios WHERE id = ?';
-    const [updatedUser] = await new Promise((resolve, reject) => {
-      conexao.query(getUserQuery, [id], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const userResult = await conexao.execute({
+      sql: getUserQuery,
+      args: [id],
     });
 
     res.status(200).json({
       message: 'Usuário atualizado com sucesso',
-      user: updatedUser,
+      user: userResult.rows[0],
     });
   } catch (error) {
     console.error('Erro ao atualizar usuário:', error);
@@ -188,14 +173,9 @@ export const updateUser = async (req, res) => {
 export const getAllUsers = async (req, res) => {
   try {
     const query = 'SELECT id, nome, email FROM usuarios';
-    const users = await new Promise((resolve, reject) => {
-      conexao.query(query, (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
-    });
+    const result = await conexao.execute(query);
 
-    res.status(200).json(users);
+    res.status(200).json(result.rows);
   } catch (error) {
     console.error('Erro ao buscar usuários:', error);
     res.status(500).json({ error: 'Erro ao buscar usuários' });
@@ -213,30 +193,26 @@ export const updateUserRole = async (req, res) => {
 
     // Update user role in the database
     const updateQuery = 'UPDATE usuarios SET cargo = ? WHERE id = ?';
-    const result = await new Promise((resolve, reject) => {
-      conexao.query(updateQuery, [role, userId], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const result = await conexao.execute({
+      sql: updateQuery,
+      args: [role, userId],
     });
 
     // Check if any rows were actually updated
-    if (result.affectedRows === 0) {
+    if (result.rowsAffected === 0) {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
     // Fetch the updated user to return
     const getUserQuery = 'SELECT id, nome, email, cargo FROM usuarios WHERE id = ?';
-    const [updatedUser] = await new Promise((resolve, reject) => {
-      conexao.query(getUserQuery, [userId], (error, results) => {
-        if (error) reject(error);
-        resolve(results);
-      });
+    const userResult = await conexao.execute({
+      sql: getUserQuery,
+      args: [userId],
     });
 
     res.status(200).json({
       message: 'Cargo do usuário atualizado com sucesso',
-      user: updatedUser,
+      user: userResult.rows[0],
     });
   } catch (error) {
     console.error('Erro ao atualizar cargo do usuário:', error);

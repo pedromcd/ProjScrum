@@ -1,3 +1,5 @@
+-- MySQL Workbench Forward Engineering
+
 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
@@ -5,7 +7,7 @@ SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,N
 -- -----------------------------------------------------
 -- Schema projetoscrum
 -- -----------------------------------------------------
-CREATE SCHEMA IF NOT EXISTS `projetoscrum` DEFAULT CHARACTER SET utf8 ;
+CREATE SCHEMA IF NOT EXISTS `projetoscrum` DEFAULT CHARACTER SET utf8mb3 ;
 USE `projetoscrum` ;
 
 -- -----------------------------------------------------
@@ -15,12 +17,14 @@ CREATE TABLE IF NOT EXISTS `projetoscrum`.`usuarios` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `nome` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) NOT NULL,
-  `senha` VARCHAR(255) NOT NULL, -- Increased size for hashed passwords
+  `senha` VARCHAR(255) NOT NULL,
   `imagem` TEXT NULL DEFAULT NULL,
-  `cargo` VARCHAR(50) NULL DEFAULT 'Usuário',
+  `cargo` ENUM('Usuário', 'Gerente', 'Admin') NOT NULL DEFAULT 'Usuário',
+  `data_criacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `ultimo_login` TIMESTAMP NULL,
   PRIMARY KEY (`id`),
-  UNIQUE INDEX `email` (`email` ASC) VISIBLE)
-ENGINE = InnoDB
+  UNIQUE INDEX `email` (`email` ASC) VISIBLE
+) ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -29,36 +33,28 @@ COLLATE = utf8mb4_0900_ai_ci;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `projetoscrum`.`projetos` (
   `id` INT NOT NULL AUTO_INCREMENT,
-  `userId` INT NOT NULL, -- To link projects to a specific user
   `projectName` VARCHAR(100) NOT NULL,
   `projectDesc` VARCHAR(500) NULL DEFAULT NULL,
   `deliveryDate` DATE NOT NULL,
-  `projectMembers` TEXT NULL DEFAULT NULL, -- Storing members as a comma-separated string
+  `criado_por` INT NOT NULL, -- User who created the project
+  `data_criacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
-  FOREIGN KEY (`userId`) REFERENCES `usuarios` (`id`) ON DELETE CASCADE
-) 
-ENGINE = InnoDB
+  FOREIGN KEY (`criado_por`) REFERENCES `usuarios`(`id`) ON DELETE RESTRICT
+) ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
 -- -----------------------------------------------------
--- Table `projetoscrum`.`project_members` (New Table)
+-- Junction table to link users to projects
 -- -----------------------------------------------------
-CREATE TABLE IF NOT EXISTS `projetoscrum`.`project_members` (
-  `project_id` INT NOT NULL,
-  `user_id` INT NOT NULL,
-  PRIMARY KEY (`project_id`, `user_id`),
-  CONSTRAINT `fk_project`
-    FOREIGN KEY (`project_id`)
-    REFERENCES `projetoscrum`.`projetos` (`id`)
-    ON DELETE CASCADE,
-  CONSTRAINT `fk_user`
-    FOREIGN KEY (`user_id`)
-    REFERENCES `projetoscrum`.`usuarios` (`id`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8mb4
-COLLATE = utf8mb4_0900_ai_ci;
+CREATE TABLE IF NOT EXISTS `projetoscrum`.`projeto_usuarios` (
+  `projectId` INT NOT NULL,
+  `userId` INT NOT NULL,
+  `data_adicao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`projectId`, `userId`),
+  FOREIGN KEY (`projectId`) REFERENCES `projetos`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`userId`) REFERENCES `usuarios`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB;
 
 -- -----------------------------------------------------
 -- Table `projetoscrum`.`sprints`
@@ -67,14 +63,17 @@ CREATE TABLE IF NOT EXISTS `projetoscrum`.`sprints` (
   `id` INT NOT NULL AUTO_INCREMENT,
   `projectId` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
-  `deliveryDate` DATE NOT NULL, -- Changed to DATE type
+  `deliveryDate` DATE NOT NULL,
+  `criado_por` INT NOT NULL, -- User who created the sprint
+  `data_criacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `projectId` (`projectId` ASC) VISIBLE,
   CONSTRAINT `sprints_ibfk_1`
     FOREIGN KEY (`projectId`)
     REFERENCES `projetoscrum`.`projetos` (`id`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
+    ON DELETE CASCADE,
+  FOREIGN KEY (`criado_por`) REFERENCES `usuarios`(`id`) ON DELETE RESTRICT
+) ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -87,8 +86,10 @@ CREATE TABLE IF NOT EXISTS `projetoscrum`.`dailys` (
   `sprintId` INT NOT NULL,
   `name` VARCHAR(100) NOT NULL,
   `description` VARCHAR(500) NULL DEFAULT NULL,
- `deliveryDate` DATE NOT NULL, -- Changed to DATE type
+  `deliveryDate` DATE NOT NULL,
   `tag` ENUM('Pendente', 'Em progresso', 'Concluido') NOT NULL DEFAULT 'Pendente',
+  `criado_por` INT NOT NULL, -- User who created the daily
+  `data_criacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `sprintId` (`sprintId` ASC) VISIBLE,
   INDEX `projectId` (`projectId` ASC) VISIBLE,
@@ -99,8 +100,9 @@ CREATE TABLE IF NOT EXISTS `projetoscrum`.`dailys` (
   CONSTRAINT `dailys_ibfk_2`
     FOREIGN KEY (`projectId`)
     REFERENCES `projetoscrum`.`projetos` (`id`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
+    ON DELETE CASCADE,
+  FOREIGN KEY (`criado_por`) REFERENCES `usuarios`(`id`) ON DELETE RESTRICT
+) ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
@@ -115,13 +117,16 @@ CREATE TABLE IF NOT EXISTS `projetoscrum`.`sprintsfinalizadas` (
   `equipe` INT NOT NULL,
   `comunicacao` INT NOT NULL,
   `entregas` INT NOT NULL,
+  `finalizado_por` INT NOT NULL, -- User who finalized the sprint
+  `data_finalizacao` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   INDEX `projectId` (`projectId` ASC) VISIBLE,
   CONSTRAINT `sprintsfinalizadas_ibfk_1`
     FOREIGN KEY (`projectId`)
     REFERENCES `projetoscrum`.`projetos` (`id`)
-    ON DELETE CASCADE)
-ENGINE = InnoDB
+    ON DELETE CASCADE,
+  FOREIGN KEY (`finalizado_por`) REFERENCES `usuarios`(`id`) ON DELETE RESTRICT
+) ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8mb4
 COLLATE = utf8mb4_0900_ai_ci;
 
