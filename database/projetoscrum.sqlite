@@ -1,0 +1,87 @@
+-- -----------------------------------------------------
+-- Table `usuarios`
+-- -----------------------------------------------------
+CREATE TABLE usuarios (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  senha TEXT NOT NULL,
+  imagem TEXT,
+  cargo TEXT CHECK (cargo IN ('Usuário', 'Gerente', 'Admin')) NOT NULL DEFAULT 'Usuário',
+  data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  ultimo_login DATETIME
+);
+
+-- -----------------------------------------------------
+-- Table `projetos`
+-- -----------------------------------------------------
+CREATE TABLE projetos (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  projectName TEXT NOT NULL,
+  projectDesc TEXT,
+  deliveryDate DATE NOT NULL,
+  criado_por INTEGER NOT NULL,
+  data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (criado_por) REFERENCES usuarios(id)
+);
+
+-- -----------------------------------------------------
+-- Junction table to link users to projects
+-- -----------------------------------------------------
+CREATE TABLE projeto_usuarios (
+  projectId INTEGER NOT NULL,
+  userId INTEGER NOT NULL,
+  data_adicao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (projectId, userId),
+  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (userId) REFERENCES usuarios(id)
+);
+
+-- -----------------------------------------------------
+-- Table `sprints`
+-- -----------------------------------------------------
+CREATE TABLE sprints (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  projectId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  deliveryDate DATE NOT NULL,
+  criado_por INTEGER NOT NULL,
+  data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (criado_por) REFERENCES usuarios(id)
+);
+
+-- -----------------------------------------------------
+-- Table `dailys`
+-- -----------------------------------------------------
+CREATE TABLE dailys (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  projectId INTEGER NOT NULL,
+  sprintId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT,
+  deliveryDate DATE NOT NULL,
+  tag TEXT CHECK (tag IN ('Pendente', 'Em progresso', 'Concluido')) NOT NULL DEFAULT 'Pendente',
+  criado_por INTEGER NOT NULL,
+  data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (sprintId) REFERENCES sprints(id),
+  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (criado_por) REFERENCES usuarios(id)
+);
+
+-- -----------------------------------------------------
+-- Table `sprintsfinalizadas`
+-- -----------------------------------------------------
+CREATE TABLE sprintsfinalizadas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  projectId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  atividades INTEGER NOT NULL,
+  equipe INTEGER NOT NULL,
+  comunicacao INTEGER NOT NULL,
+  entregas INTEGER NOT NULL,
+  finalizado_por INTEGER NOT NULL,
+  data_finalizacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (finalizado_por) REFERENCES usuarios(id)
+);

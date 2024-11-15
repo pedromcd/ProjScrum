@@ -19,10 +19,10 @@ const pageNameMapping = {
 
 const Header = ({ toggleNavbar, isNavbarVisible }) => {
   const location = useLocation();
-
   const [projectNames, setProjectNames] = useState([]);
   const [userName, setUserName] = useState('');
   const [userImage, setUserImage] = useState('');
+  const [userRole, setUserRole] = useState('Usuário');
 
   useEffect(() => {
     const storedProjects = getStoredProjects();
@@ -36,6 +36,8 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
         const userData = await userService.getCurrentUser();
         setUserName(userData.nome);
         setUserImage(userData.imagem);
+
+        setUserRole(userData.cargo || 'Usuário');
       } catch (error) {
         console.error('Erro ao carregar dados do usuário', error);
       }
@@ -89,7 +91,7 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
 
         <ul className='user-info-list'>
           <li className='info-list-name'>{userName}</li>
-          <li className='info-list-position'>Cargo</li>
+          <li className='info-list-position'>{userRole}</li>
         </ul>
       </div>
     </header>

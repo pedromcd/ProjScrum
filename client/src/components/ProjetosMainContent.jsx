@@ -11,13 +11,15 @@ import 'slick-carousel/slick/slick-theme.css';
 import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
 import { Link } from 'react-router-dom';
 import Select from 'react-select';
-import { userService } from '../services/api'; // Add this import
+import { userService, projectService } from '../services/api'; // Add this import
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false); // New state to prevent multiple submissions
+
   const {
     projectName,
     setProjectName,
@@ -27,12 +29,25 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     setDeliveryDate,
     projectMembers,
     setProjectMembers,
-    handleCreateProject,
     projectCards,
     setProjectCards,
     isFormValid,
   } = useProjectCreation();
+
   const [userOptions, setUserOptions] = useState([]);
+
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        const projects = await projectService.getProjetos();
+        setProjectCards(projects);
+      } catch (error) {
+        console.error('Erro ao carregar projetos', error);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -57,33 +72,44 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     setProjectMembers(selectedMembers);
   };
 
-  const handleCreateProjectAndCloseModal = () => {
-    // Convert selected members to a comma-separated string
-    const projectMembersString = projectMembers.map((member) => member.label).join(',');
+  const handleCreateProjectAndCloseModal = async () => {
+    // Prevent multiple submissions
+    if (isCreating) return;
 
-    // Create the project with the members string
-    const newProject = {
-      id: Date.now(), // or use a more robust ID generation method
-      projectName,
-      projectDesc,
-      deliveryDate,
-      projectMembers: projectMembersString, // Store as a string
-    };
+    // Validate form
+    if (!isFormValid) {
+      console.error('Formulário inválido');
+      return;
+    }
 
-    // Add the project to local storage or your state management
-    const existingProjects = JSON.parse(localStorage.getItem('projects')) || [];
-    const updatedProjects = [...existingProjects, newProject];
-    localStorage.setItem('projects', JSON.stringify(updatedProjects));
+    try {
+      setIsCreating(true);
 
-    // Update project cards state
-    setProjectCards(updatedProjects);
+      const newProject = await projectService.criarProjeto({
+        projectName,
+        projectDesc,
+        deliveryDate,
+        projectMembers: projectMembers.map((member) => member.value),
+      });
 
-    // Reset form and close modal
-    setProjectName('');
-    setProjectDesc('');
-    setDeliveryDate('');
-    setProjectMembers([]);
-    setOpenModal(false);
+      // Update project cards
+      setProjectCards((prev) => [...prev, newProject.project]);
+
+      // Reset form
+      setProjectName('');
+      setProjectDesc('');
+      setDeliveryDate('');
+      setProjectMembers([]);
+
+      // Close modal
+      setOpenModal(false); // Close the modal here
+    } catch (error) {
+      console.error('Erro ao criar projeto', error);
+      // Optionally show an error message to the user
+    } finally {
+      // Reset creating state
+      setIsCreating(false);
+    }
   };
 
   const handleCloseModal = () => {
@@ -96,31 +122,55 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
   const handleCardClick = (projectId) => {
     if (deleteMode) {
-      console.log('Selected project for deletion:', projectId);
       setSelectedCard(projectId);
       setOpenDeleteModal(true);
     }
   };
 
-  const handleDeleteConfirm = () => {
-    console.log('Deleting project with ID:', selectedCard);
-    console.log('Projects before deletion:', projectCards);
+  const handleDeleteConfirm = async () => {
+    if (!selectedCard) return;
 
-    const newProjectCards = projectCards.filter((project) => project.id !== selectedCard);
+    try {
+      console.log('Attempting to delete project:', {
+        projectId: selectedCard,
+        projectName: projectCards.find((p) => p.id === selectedCard)?.projectName,
+      });
 
-    console.log('Projects after deletion:', newProjectCards);
+      const response = await projectService.deletarProjeto(selectedCard);
 
-    setProjectCards(newProjectCards);
-    setOpenDeleteModal(false);
-    setDeleteMode(false);
-    setSelectedCard(null);
+      // Remove the deleted project from the list
+      const newProjectCards = projectCards.filter((project) => project.id !== selectedCard);
+      setProjectCards(newProjectCards);
+
+      // Close modals and reset states
+      setOpenDeleteModal(false);
+      setDeleteMode(false);
+      setSelectedCard(null);
+
+      // Show a success message
+      alert('Projeto deletado com sucesso');
+    } catch (error) {
+      console.error('Erro completo ao deletar projeto:', {
+        error,
+        response: error.response,
+        data: error.response?.data,
+      });
+
+      // More detailed error handling
+      const errorMessage =
+        error.response?.data?.error ||
+        error.error ||
+        (typeof error === 'object' ? JSON.stringify(error) : 'Erro ao deletar projeto');
+
+      // Show a more informative error message
+      alert(`Erro ao deletar projeto: ${errorMessage}`);
+
+      // Additional context logging
+      if (error.response?.data?.details) {
+        console.log('Detalhes do erro:', error.response.data.details);
+      }
+    }
   };
-
-  const handleDeleteCancel = () => {
-    setOpenDeleteModal(false);
-    setSelectedCard(null);
-  };
-
   const settings = {
     dots: true,
     infinite: false,
@@ -203,15 +253,16 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
                 value={projectMembers}
                 onChange={handleMemberChange}
                 placeholder='Selecione os membros do projeto'
+                className='custom-select'
               />
             </li>
           </ul>
           <button
             className='create-project'
             onClick={handleCreateProjectAndCloseModal}
-            disabled={!isFormValid}
+            disabled={!isFormValid || isCreating}
           >
-            Criar
+            {isCreating ? 'Criando...' : 'Criar'}
           </button>
           <button className='cancel-project' onClick={handleCloseModal}>
             Cancelar
@@ -244,14 +295,14 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
       {/* Delete Confirmation Modal */}
       {openDeleteModal && (
-        <Modal isOpen={openDeleteModal} onClose={handleDeleteCancel}>
+        <Modal isOpen={openDeleteModal} onClose={() => setOpenDeleteModal(false)}>
           <div className='modal-delete-daily'>
             <p>Tem certeza que deseja excluir esse projeto?</p>
             <div className='buttons-container'>
               <button className='delete-confirm' onClick={handleDeleteConfirm}>
                 Sim
               </button>
-              <button className='delete-cancel' onClick={handleDeleteCancel}>
+              <button className='delete-cancel' onClick={() => setOpenDeleteModal(false)}>
                 Não
               </button>
             </div>

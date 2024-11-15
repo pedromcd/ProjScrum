@@ -241,6 +241,10 @@ select {
 }
 
 /* Dark mode styles */
+.dark .projects-main-content .modal-project-inputs .custom-select {
+  color: black;
+}
+
 .dark .projects-main-content .create-button {
   background: #273142;
   color: #ffffff;

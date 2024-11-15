@@ -12,7 +12,6 @@
   height: 100vh;
   min-width: 100vh;
   background: #d4d7e6;
-  transition: 0.15s;
 }
 
 .link {
@@ -27,4 +26,54 @@
 
 .container.dark {
   background: #1b2431;
+}
+
+/* Common loading screen styles */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  color: white; /* Default text color for dark mode */
+  z-index: 9999;
+}
+
+/* Spinner styles */
+.loading-screen .spinner {
+  border: 8px solid #f3f3f3; /* Light color */
+  border-top: 8px solid #3498db; /* Spinner color */
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+/* Default (dark) mode styles */
+.loading-screen {
+  background-color: #1b2431; /* Dark background */
+}
+
+/* Light mode styles */
+.container.light .loading-screen {
+  background-color: #ffffff; /* Light background */
+  color: black; /* Text color for light mode */
+}
+
+.container.light .loading-screen .spinner {
+  border: 8px solid #ccc; /* Light spinner color */
+  border-top: 8px solid #3498db; /* Spinner color */
 }

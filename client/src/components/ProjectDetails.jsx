@@ -5,6 +5,7 @@ import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-i
 import Modal from './Modal';
 import { Avatar, AvatarGroup, Tooltip } from '@mui/material';
 import { formatDate } from '../utils/generateCard';
+import { projectService, userService, sprintService } from '../services/api';
 
 const ProjectDetails = ({ isNavbarVisible, project }) => {
   const [state, setState] = useState({
@@ -32,6 +33,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       entregas: 0,
     },
     endedSprints: [],
+    userImages: {},
   });
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [dailyToDelete, setDailyToDelete] = useState(null);
@@ -43,11 +45,15 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     setOpenDeleteModal(true);
   };
 
-  const handleDeleteConfirm = () => {
-    const updatedDailies = state.dailies.filter((daily) => daily.id !== dailyToDelete);
-    setState((prevState) => ({ ...prevState, dailies: updatedDailies }));
-    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
-    setOpenDeleteModal(false);
+  const handleDeleteConfirm = async () => {
+    try {
+      await sprintService.deletarDaily(dailyToDelete); // Call the API to delete the daily
+      const updatedDailies = state.dailies.filter((daily) => daily.id !== dailyToDelete);
+      setState((prevState) => ({ ...prevState, dailies: updatedDailies }));
+      setOpenDeleteModal(false);
+    } catch (error) {
+      console.error('Erro ao deletar daily:', error);
+    }
   };
 
   const handleDeleteCancel = () => {
@@ -55,23 +61,27 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
   };
 
   useEffect(() => {
-    if (project && project.id) {
-      const storedSprints = JSON.parse(localStorage.getItem(`sprints_${project.id}`)) || [];
-      const storedDailies = JSON.parse(localStorage.getItem(`dailies_${project.id}`)) || [];
-      const selectedSprint =
-        JSON.parse(localStorage.getItem(`selectedSprint_${project.id}`)) ||
-        (storedSprints.length === 1 ? storedSprints[0].id : '');
+    const fetchProjectData = async () => {
+      if (project && project.id) {
+        try {
+          // Fetch sprints and dailies from the database
+          const storedSprints = await projectService.getSprintsByProjectId(project.id);
+          const storedDailies = await projectService.getDailiesByProjectId(project.id);
 
-      const endedSprints = JSON.parse(localStorage.getItem(`endedSprints_${project.id}`)) || [];
+          setState((prevState) => ({
+            ...prevState,
+            sprints: storedSprints,
+            dailies: storedDailies,
+            // Select the first sprint if available, otherwise set to empty string
+            selectedSprint: storedSprints.length > 0 ? storedSprints[0].id.toString() : '',
+          }));
+        } catch (error) {
+          console.error('Erro ao carregar dados do projeto:', error);
+        }
+      }
+    };
 
-      setState((prevState) => ({
-        ...prevState,
-        sprints: storedSprints,
-        dailies: storedDailies,
-        selectedSprint: selectedSprint,
-        endedSprints: endedSprints,
-      }));
-    }
+    fetchProjectData();
   }, [project]);
 
   useEffect(() => {
@@ -96,153 +106,166 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }
   }, [state.dailies, state.selectedSprint, state.sprints.length]);
 
-  const handleCreateSprint = () => {
+  const handleCreateSprint = async () => {
     if (!state.sprintName || !state.deliveryDate) {
       return;
     }
 
-    const newSprint = {
-      id: state.sprints.length + 1,
-      projectId: project.id,
-      name: state.sprintName,
-      deliveryDate: state.deliveryDate,
-    };
+    try {
+      const newSprint = await sprintService.criarSprint({
+        projectId: project.id,
+        name: state.sprintName,
+        deliveryDate: state.deliveryDate,
+      });
 
-    const updatedSprints = [...state.sprints, newSprint];
+      // Update the state immediately
+      setState((prevState) => {
+        // Create a new array of sprints with the new sprint
+        const updatedSprints = [...prevState.sprints, newSprint.sprint];
 
-    setState((prevState) => ({
-      ...prevState,
-      sprints: updatedSprints,
-      sprintName: '',
-      deliveryDate: '',
-      openSprintModal: false,
-    }));
-
-    // Save sprints under the current project
-    localStorage.setItem(`sprints_${project.id}`, JSON.stringify(updatedSprints));
+        return {
+          ...prevState,
+          sprints: updatedSprints,
+          sprintName: '',
+          deliveryDate: '',
+          openSprintModal: false,
+          // Automatically select the newly created sprint
+          selectedSprint: newSprint.sprint.id.toString(),
+        };
+      });
+    } catch (error) {
+      console.error('Erro ao criar sprint:', error);
+    }
   };
 
-  const handleCreateDaily = () => {
+  const handleCreateDaily = async () => {
     if (!state.dailyName || !state.dailyDeliveryDate || !state.selectedSprint) {
       return;
     }
 
-    const newDaily = {
-      id: state.dailies.length + 1,
-      projectId: project.id,
-      sprintId: parseInt(state.selectedSprint, 10),
-      name: state.dailyName,
-      description: state.description,
-      deliveryDate: state.dailyDeliveryDate,
-      tag: state.dailyTag,
-    };
+    try {
+      const newDaily = await sprintService.criarDaily({
+        projectId: project.id,
+        sprintId: parseInt(state.selectedSprint, 10),
+        name: state.dailyName,
+        description: state.description,
+        deliveryDate: state.dailyDeliveryDate,
+        tag: state.dailyTag,
+      });
 
-    const updatedDailies = [...state.dailies, newDaily];
+      setState((prevState) => ({
+        ...prevState,
+        dailies: [...prevState.dailies, newDaily.daily], // Use newDaily.daily to get the created daily
+        dailyName: '',
+        description: '',
+        dailyDeliveryDate: '',
+        dailyTag: 'Pendente',
+        openDailyModal: false,
+      }));
+    } catch (error) {
+      console.error('Erro ao criar daily:', error);
+    }
+  };
+
+  const handleSprintSelect = async (e) => {
+    const selectedSprintId = e.target.value;
 
     setState((prevState) => ({
       ...prevState,
-      dailies: updatedDailies,
-      dailyName: '',
-      description: '',
-      dailyDeliveryDate: '',
-      dailyTag: 'Pendente',
-      openDailyModal: false,
+      selectedSprint: selectedSprintId,
     }));
-
-    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
   };
 
-  const handleSprintSelect = (e) => {
-    const selectedSprintId = e.target.value;
-    setState((prevState) => ({ ...prevState, selectedSprint: selectedSprintId }));
-    localStorage.setItem(`selectedSprint_${project.id}`, JSON.stringify(selectedSprintId));
-  };
-
-  useEffect(() => {
-    if (state.sprints.length === 1) {
-      setState((prevState) => ({ ...prevState, selectedSprint: state.sprints[0].id }));
-      localStorage.setItem('selectedSprint', JSON.stringify(state.sprints[0].id));
+  //Helper function to safely handle project members
+  const getProjectMembers = (projectMembers) => {
+    if (Array.isArray(projectMembers)) {
+      return projectMembers;
     }
-  }, [state.sprints]);
+    if (typeof projectMembers === 'string') {
+      return projectMembers.split(',').map((member) => member.trim());
+    }
+    return [];
+  };
 
   useEffect(() => {
     if (project && project.projectMembers) {
       const colors = {};
-      // Split the members string and create colors
-      const members = project.projectMembers.split(',');
+      const members = getProjectMembers(project.projectMembers);
+
       members.forEach((member) => {
-        colors[member.trim()] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
+        colors[member] = `#${Math.floor(Math.random() * 16777215).toString(16)}`; // Generate random color
       });
+
       setState((prevState) => ({ ...prevState, avatarColors: colors }));
     }
   }, [project]);
-
-  const stringAvatar = (name) => {
-    const color = state.avatarColors[name] || '#000';
-    return {
-      sx: {
-        bgcolor: color,
-      },
-      children: `${name.charAt(0).toUpperCase()}`,
-    };
-  };
 
   const handleDragStart = (dailyId) => {
     setState((prevState) => ({ ...prevState, draggedDailyId: dailyId }));
   };
 
-  const handleDrop = (newTag) => {
+  const handleDrop = async (newTag) => {
     const { draggedDailyId, dailies } = state;
-    const updatedDailies = dailies.map((daily) =>
-      daily.id === draggedDailyId ? { ...daily, tag: newTag } : daily
-    );
 
-    setState((prevState) => ({
-      ...prevState,
-      dailies: updatedDailies,
-      draggedDailyId: null,
-    }));
+    try {
+      // Update the daily tag in the database
+      await sprintService.atualizarDailyTag(draggedDailyId, newTag);
 
-    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
+      // Update the local state
+      const updatedDailies = dailies.map((daily) =>
+        daily.id === draggedDailyId ? { ...daily, tag: newTag } : daily
+      );
+
+      setState((prevState) => ({
+        ...prevState,
+        dailies: updatedDailies,
+        draggedDailyId: null,
+      }));
+    } catch (error) {
+      console.error('Erro ao atualizar tag da daily:', error);
+    }
   };
 
   const handleEvaluation = () => {
     setState((prevState) => ({ ...prevState, evaluationModalOpen: true }));
   };
 
-  const handleEvaluationSubmit = () => {
+  const handleEvaluationSubmit = async () => {
     const { evaluationScores, selectedSprint, sprints, dailies } = state;
     const sprintToEnd = sprints.find((sprint) => sprint.id === parseInt(selectedSprint));
 
     const endedSprint = {
-      id: selectedSprint,
       projectId: project.id,
+      sprintId: selectedSprint,
       name: sprintToEnd.name,
-      evaluationScores,
-      dailies: dailies.filter((daily) => daily.sprintId === parseInt(selectedSprint)),
+      evaluationScores: {
+        atividades: evaluationScores.atividades,
+        equipe: evaluationScores.equipe,
+        comunicacao: evaluationScores.comunicacao,
+        entregas: evaluationScores.entregas,
+      },
     };
 
-    const updatedEndedSprints = [...state.endedSprints, endedSprint];
-    const updatedSprints = sprints.filter((sprint) => sprint.id !== parseInt(selectedSprint));
-    const updatedDailies = dailies.filter((daily) => daily.sprintId !== parseInt(selectedSprint));
+    try {
+      // Save ended sprint to the database
+      await sprintService.finalizarSprint(endedSprint);
 
-    // Atualizar o estado local
-    setState((prevState) => ({
-      ...prevState,
-      endedSprints: updatedEndedSprints,
-      sprints: updatedSprints,
-      dailies: updatedDailies,
-      evaluationModalOpen: false,
-      selectedSprint: updatedSprints.length > 0 ? updatedSprints[0].id.toString() : '',
-    }));
+      // Update local state
+      const updatedEndedSprints = [...state.endedSprints, endedSprint];
+      const updatedSprints = sprints.filter((sprint) => sprint.id !== parseInt(selectedSprint));
+      const updatedDailies = dailies.filter((daily) => daily.sprintId !== parseInt(selectedSprint));
 
-    // Atualizar o localStorage
-    localStorage.setItem(`endedSprints_${project.id}`, JSON.stringify(updatedEndedSprints));
-    localStorage.setItem(`sprints_${project.id}`, JSON.stringify(updatedSprints));
-    localStorage.setItem(`dailies_${project.id}`, JSON.stringify(updatedDailies));
-
-    // Forçar uma re-renderização
-    forceUpdate();
+      setState((prevState) => ({
+        ...prevState,
+        endedSprints: updatedEndedSprints,
+        sprints: updatedSprints,
+        dailies: updatedDailies,
+        evaluationModalOpen: false,
+        selectedSprint: updatedSprints.length > 0 ? updatedSprints[0].id.toString() : '',
+      }));
+    } catch (error) {
+      console.error('Erro ao finalizar sprint:', error);
+    }
   };
 
   const handleEvaluationChange = (e) => {
@@ -252,6 +275,49 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       evaluationScores: { ...prevState.evaluationScores, [name]: parseInt(value, 10) },
     }));
   };
+
+  // Function to generate avatar text
+  const generateAvatarText = (userName) => {
+    return userName && userName.trim() !== ''
+      ? userName
+          .split(' ')
+          .filter((name) => name.length > 2)
+          .map((name, index, array) =>
+            index === 0 || index === array.length - 1 ? name[0].toUpperCase() : ''
+          )
+          .join('')
+          .slice(0, 2)
+      : '';
+  };
+
+  // Fetch user images when project members change
+  useEffect(() => {
+    const fetchUserImages = async () => {
+      if (project && project.projectMembers) {
+        const members = getProjectMembers(project.projectMembers);
+        const images = {};
+
+        // Fetch images for each member
+        for (const member of members) {
+          try {
+            const userData = await userService.getUserByName(member);
+            if (userData.imagem) {
+              images[member] = userData.imagem;
+            }
+          } catch (error) {
+            console.error(`Error fetching image for ${member}:`, error);
+          }
+        }
+
+        setState((prevState) => ({
+          ...prevState,
+          userImages: images,
+        }));
+      }
+    };
+
+    fetchUserImages();
+  }, [project]);
 
   if (!project) {
     return <div>No project found</div>;
@@ -263,23 +329,30 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         <Tooltip
           title={
             <div style={{ columnCount: 1, maxHeight: 200, overflowY: 'auto' }}>
-              {project.projectMembers &&
-                project.projectMembers.split(',').map((member, index) => (
-                  <div key={index} style={{ marginBottom: 8 }}>
-                    {member.trim()}
-                  </div>
-                ))}
+              {getProjectMembers(project.projectMembers).map((member, index) => (
+                <div key={index} style={{ marginBottom: 8 }}>
+                  {member.trim()}
+                </div>
+              ))}
             </div>
           }
           placement='right'
         >
           <AvatarGroup max={4}>
-            {project.projectMembers &&
-              project.projectMembers.split(',').map((member, index) => (
-                <Avatar key={index} {...stringAvatar(member.trim())}>
-                  {member.trim().charAt(0).toUpperCase()}
+            {getProjectMembers(project.projectMembers).map((member, index) =>
+              state.userImages[member] ? (
+                <Avatar
+                  key={index}
+                  className='avatar'
+                  sx={{ width: 50, height: 50 }}
+                  src={state.userImages[member]}
+                />
+              ) : (
+                <Avatar key={index} className='avatar' sx={{ width: 50, height: 50 }}>
+                  {generateAvatarText(member)}
                 </Avatar>
-              ))}
+              )
+            )}
           </AvatarGroup>
         </Tooltip>
       </div>
@@ -347,7 +420,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       <Modal isOpen={state.openDailyModal}>
         <div
           className='modal-close-button'
-          onClick={() => setState((prev) => ({ ...prev, openDailyModal: false }))} // Correctly closes the Daily modal
+          onClick={() => setState((prev) => ({ ...prev, openDailyModal: false }))}
         >
           <FontAwesomeIcon icon={faCircleXmark} />
         </div>
@@ -414,7 +487,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       <Modal isOpen={state.evaluationModalOpen}>
         <div
           className='modal-close-button'
-          onClick={() => setState((prev) => ({ ...prev, evaluationModalOpen: false }))} // Correctly closes the Evaluation modal
+          onClick={() => setState((prev) => ({ ...prev, evaluationModalOpen: false }))}
         >
           <FontAwesomeIcon icon={faCircleXmark} />
         </div>
@@ -473,10 +546,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </Modal>
 
       <Modal isOpen={openDeleteModal}>
-        <div
-          className='modal-close-button'
-          onClick={handleDeleteCancel} // Correctly closes the Delete modal
-        >
+        <div className='modal-close-button' onClick={handleDeleteCancel}>
           <FontAwesomeIcon icon={faCircleXmark} />
         </div>
         <div className='modal-delete-daily'>
@@ -499,7 +569,10 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
         disabled={state.sprints.length === 1}
       >
         {state.sprints.map((sprint) => (
-          <option key={sprint.id} value={sprint.id}>
+          <option
+            key={`sprint-${sprint.id}`} // Ensure unique key
+            value={sprint.id}
+          >
             {sprint.name}
           </option>
         ))}
@@ -534,7 +607,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           >
             {state.pendingDailies.map((daily) => (
               <div
-                key={daily.id}
+                key={`pending-daily-${daily.id}`} // Unique key
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}
@@ -548,6 +621,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
               </div>
             ))}
           </div>
+
           <div
             className='in-progress-container'
             onDragOver={(e) => e.preventDefault()}
@@ -555,7 +629,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           >
             {state.inProgressDailies.map((daily) => (
               <div
-                key={daily.id}
+                key={`in-progress-daily-${daily.id}`} // Unique key
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}
@@ -569,6 +643,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
               </div>
             ))}
           </div>
+
           <div
             className='completed-container'
             onDragOver={(e) => e.preventDefault()}
@@ -576,7 +651,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           >
             {state.completedDailies.map((daily) => (
               <div
-                key={daily.id}
+                key={`completed-daily-${daily.id}`} // Unique key
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}

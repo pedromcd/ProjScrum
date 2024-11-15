@@ -40,3 +40,14 @@
   color: #ffffff;
   box-shadow: 1px 1px 5px black;
 }
+
+/* Dark Mode Styles */
+
+.modal-container.dark-mode {
+  background-color: #273142;
+  color: white;
+}
+
+.modal-container.dark-mode .custom-select {
+  color: black;
+}

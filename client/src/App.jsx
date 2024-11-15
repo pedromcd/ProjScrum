@@ -18,7 +18,7 @@ export const ModalContext = createContext();
 
 export default function App() {
   const current_theme = localStorage.getItem('current_theme');
-  const [theme, setTheme] = useState(current_theme ? current_theme : 'light');
+  const [theme, setTheme] = useState(current_theme ? current_theme : 'dark');
   const [isNavbarVisible, setNavbarVisible] = useState(true);
   const [selectedOption, setSelectedOption] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -27,6 +27,8 @@ export default function App() {
   const [selectedRole, setSelectedRole] = useState('usuario');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [openModal, setOpenModal] = useState(false);
+  const [newManager, setNewManager] = useState({ user: '', position: '' });
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -60,8 +62,15 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const startTime = Date.now();
+
         await userService.getCurrentUser();
         setIsAuthenticated(true);
+
+        const elapsedTime = Date.now() - startTime;
+        if (elapsedTime < 500) {
+          await new Promise((resolve) => setTimeout(resolve, 500 - elapsedTime));
+        }
       } catch (error) {
         setIsAuthenticated(false);
       } finally {
@@ -81,9 +90,6 @@ export default function App() {
     return isAuthenticated ? children : <Navigate to='/login' />;
   };
 
-  const [openModal, setOpenModal] = useState(false);
-  const [newManager, setNewManager] = useState({ user: '', position: '' });
-
   const handleCreateManager = async () => {
     // Validate inputs
     if (!selectedOption) {
@@ -96,10 +102,13 @@ export default function App() {
       setError('');
       setSuccess('');
 
+      // Capitalize the first letter of the role to match server-side validation
+      const formattedRole = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+
       // Call API to update user role
       const response = await userService.updateUserRole({
         userId: selectedOption.value,
-        role: selectedRole,
+        role: formattedRole, // Use capitalized role
       });
 
       // Update success message
@@ -107,7 +116,7 @@ export default function App() {
 
       // Optional: Update the local user list to reflect the change
       const updatedUserList = userList.map((user) =>
-        user.value === selectedOption.value ? { ...user, role: selectedRole } : user
+        user.value === selectedOption.value ? { ...user, role: formattedRole } : user
       );
       setUserList(updatedUserList);
 
@@ -116,8 +125,17 @@ export default function App() {
       setSelectedOption(null);
       setSelectedRole('usuario');
     } catch (err) {
-      // Handle any errors
-      setError(err.message || 'Erro ao atualizar cargo do usuário');
+      // Handle error
+      console.error('Erro completo:', err);
+
+      // Check if err is an object with an error property
+      const errorMessage =
+        err.error ||
+        (typeof err === 'object' && err.allowedRoles
+          ? `Cargo inválido. Opções válidas: ${err.allowedRoles.join(', ')}`
+          : 'Erro ao atualizar cargo do usuário');
+
+      setError(errorMessage);
     }
   };
 
@@ -130,7 +148,14 @@ export default function App() {
   };
 
   if (isLoading) {
-    return <div>Carregando...</div>; // Or a loading spinner
+    return (
+      <div className={`container ${theme}`}>
+        <div className='loading-screen'>
+          <div className='spinner' />
+          <div>Carregando...</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -213,7 +238,7 @@ export default function App() {
           <Route path='/cadastro' element={<Cadastro />} />
         </Routes>
 
-        <Modal isOpen={openModal}>
+        <Modal isOpen={openModal} theme={theme}>
           <div className='modal-close-button' onClick={handleCloseModal}>
             <FontAwesomeIcon icon={faCircleXmark} />
           </div>
@@ -227,13 +252,14 @@ export default function App() {
                   value={selectedOption}
                   onChange={setSelectedOption}
                   placeholder='Selecione um usuário'
+                  className='custom-select'
                 />
               </li>
               <li>
                 <p>Cargo</p>
                 <select value={selectedRole} onChange={(e) => setSelectedRole(e.target.value)}>
-                  <option value='usuario'>Usuário</option>
-                  <option value='gerente'>Gerente</option>
+                  <option value='Usuário'>Usuário</option>
+                  <option value='Gerente'>Gerente</option>
                 </select>
               </li>
             </ul>
