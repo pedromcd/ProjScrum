@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../assets/styles/HistoricoMainContent.css';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
+import { projectService } from '../services/api';
 
 const HistoricoMainContent = ({ isNavbarVisible }) => {
   const [projects, setProjects] = useState([]);
@@ -10,29 +11,25 @@ const HistoricoMainContent = ({ isNavbarVisible }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   useEffect(() => {
-    const storedProjects = JSON.parse(localStorage.getItem('projects')) || [];
+    const fetchProjects = async () => {
+      try {
+        const fetchedProjects = await projectService.getProjetos();
 
-    const projectsWithEndedSprints = storedProjects.map((project) => {
-      const endedSprints = JSON.parse(localStorage.getItem(`endedSprints_${project.id}`)) || [];
-      return { ...project, endedSprints };
-    });
+        // Fetch ended sprints for each project
+        const projectsWithEndedSprints = await Promise.all(
+          fetchedProjects.map(async (project) => {
+            const endedSprints = await projectService.getEndedSprintsByProjectId(project.id);
+            return { ...project, endedSprints };
+          })
+        );
 
-    setProjects(projectsWithEndedSprints);
-
-    // Recuperar o projeto e sprint selecionados do localStorage
-    const savedProjectId = localStorage.getItem('selectedHistoryProjectId');
-    const savedSprintId = localStorage.getItem('selectedHistorySprintId');
-
-    if (savedProjectId) {
-      const project = projectsWithEndedSprints.find((p) => p.id === savedProjectId);
-      setSelectedProject(project);
-      setIsDropdownOpen(true);
-
-      if (savedSprintId && project) {
-        const sprint = project.endedSprints.find((s) => s.id === savedSprintId);
-        setSelectedSprint(sprint);
+        setProjects(projectsWithEndedSprints);
+      } catch (error) {
+        console.error('Erro ao buscar projetos:', error);
       }
-    }
+    };
+
+    fetchProjects();
   }, []);
 
   const handleProjectSelect = (projectId) => {
@@ -40,17 +37,10 @@ const HistoricoMainContent = ({ isNavbarVisible }) => {
     setSelectedProject(project);
     setSelectedSprint(null);
     setIsDropdownOpen(!isDropdownOpen);
-
-    // Salvar o projeto selecionado no localStorage
-    localStorage.setItem('selectedHistoryProjectId', projectId);
-    localStorage.removeItem('selectedHistorySprintId');
   };
 
   const handleSprintSelect = (sprint) => {
     setSelectedSprint(sprint);
-
-    // Salvar a sprint selecionada no localStorage
-    localStorage.setItem('selectedHistorySprintId', sprint.id);
   };
 
   return (
@@ -85,7 +75,7 @@ const HistoricoMainContent = ({ isNavbarVisible }) => {
           <div className='sprint-details'>
             <h1>{selectedSprint.name}</h1>
             <div className='evaluation'>
-              <h3>Avaliação da Sprint</h3>{' '}
+              <h3>Avaliação da Sprint</h3>
               <ul>
                 <li>Atividades: {selectedSprint.evaluationScores.atividades}</li>
                 <li>Equipe: {selectedSprint.evaluationScores.equipe}</li>

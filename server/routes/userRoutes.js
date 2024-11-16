@@ -7,9 +7,10 @@ import {
   updateUser,
   getAllUsers,
   updateUserRole,
-  getProjetos,
   criarProjeto,
   deletarProjeto,
+  finalizeDaily,
+  deleteUser,
 } from '../controllers/userController.js';
 import { verificarToken } from '../middlewares/authMiddleware.js';
 import { conexao } from '../config/database.js';
@@ -23,55 +24,83 @@ router.get('/usuarioLogado', verificarToken, usuarioLogado);
 router.put('/updateUser', verificarToken, updateUser);
 router.get('/usuarios', verificarToken, getAllUsers);
 router.put('/update-user-role', verificarToken, updateUserRole);
+router.post('/criar-projeto', verificarToken, criarProjeto);
+router.delete('/deletar-projeto', verificarToken, deletarProjeto);
+router.post('/finalizar-daily/:dailyId', verificarToken, finalizeDaily);
+router.delete('/delete-account', verificarToken, deleteUser);
+
+// Fetch projects for a user
 router.get('/projetos', verificarToken, async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming your token payload uses 'id'
-    const selectProj = `
-      SELECT p.* 
-      FROM projetos p
-      JOIN projeto_usuarios pu ON p.id = pu.projectId
-      WHERE pu.userId = ?`;
+    const userId = req.user.id;
+    const userRole = req.user.cargo;
+
+    let selectProj;
+    let queryArgs;
+
+    // Debugging query to check projects in the database
+    const checkProjectsQuery = 'SELECT * FROM projetos';
+    const allProjectsResult = await conexao.execute(checkProjectsQuery);
+
+    if (userRole === 'Admin') {
+      // If user is an Admin, fetch all projects
+      selectProj = 'SELECT * FROM projetos';
+      queryArgs = [];
+    } else {
+      // For non-admin users, fetch only projects they're part of
+      selectProj = `
+        SELECT DISTINCT p.* 
+        FROM projetos p
+        LEFT JOIN projeto_usuarios pu ON p.id = pu.projectId
+        WHERE p.criado_por = ? OR pu.userId = ?
+      `;
+      queryArgs = [userId, userId];
+    }
 
     const result = await conexao.execute({
       sql: selectProj,
-      args: [userId],
+      args: queryArgs,
     });
 
     res.status(200).json(result.rows);
   } catch (error) {
-    console.error('Erro ao buscar projetos:', error);
-    res.status(500).json({ error: 'Erro ao buscar projetos' });
+    console.error('Detailed error fetching projects:', {
+      message: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({
+      error: 'Erro ao buscar projetos',
+      details: error.message,
+    });
   }
 });
-router.post('/criar-projeto', verificarToken, criarProjeto);
-router.delete('/deletar-projeto', verificarToken, deletarProjeto);
-router.get('/projects/:projectName', verificarToken, async (req, res) => {
+
+// Fetch project details with members
+router.get('/projects/id/:projectId', verificarToken, async (req, res) => {
   try {
-    const { projectName } = req.params;
+    const { projectId } = req.params;
 
     // SQL query to fetch project details with members
     const query = `
       SELECT 
         p.id, 
         p.projectName, 
-        p.projectDesc as description, 
-        p.deliveryDate as endDate,
-        GROUP_CONCAT(u.nome) AS projectMembers
+        p.projectDesc AS description, 
+        p.deliveryDate AS endDate,
+        (
+          SELECT GROUP_CONCAT(u.nome, ', ')
+          FROM projeto_usuarios pu 
+          JOIN usuarios u ON pu.userId = u.id
+          WHERE pu.projectId = p.id
+        ) AS projectMembers
       FROM 
         projetos p
-      LEFT JOIN 
-        projeto_usuarios pu ON p.id = pu.projectId
-      LEFT JOIN 
-        usuarios u ON pu.userId = u.id
       WHERE 
-        p.projectName = ?
-      GROUP BY 
-        p.id
-    `;
+        p.id = ?`;
 
     const result = await conexao.execute({
       sql: query,
-      args: [projectName],
+      args: [projectId],
     });
 
     if (result.rows.length === 0) {
@@ -84,26 +113,54 @@ router.get('/projects/:projectName', verificarToken, async (req, res) => {
     res.status(500).json({ message: 'Internal server error', error: error.message });
   }
 });
-router.get('/users/name/:name', verificarToken, async (req, res) => {
-  try {
-    const { name } = req.params;
 
-    const query = 'SELECT id, nome, email, imagem FROM usuarios WHERE nome = ?';
-    const result = await conexao.execute({
+// Fetch user by name
+router.get('/users/name/:name', verificarToken, async (req, res) => {
+  const name = req.params.name;
+
+  try {
+    // Try exact match first
+    let query = 'SELECT id, nome, imagem FROM usuarios WHERE nome = ?';
+    let result = await conexao.execute({
       sql: query,
       args: [name],
     });
 
+    // If no exact match, try case-insensitive match
     if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
+      query = 'SELECT id, nome, imagem FROM usuarios WHERE LOWER(nome) = LOWER(?)';
+      result = await conexao.execute({
+        sql: query,
+        args: [name],
+      });
     }
 
-    res.status(200).json(result.rows[0]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Return the first matching user
+    const user = result.rows[0];
+
+    // Ensure image is in base64 format
+    if (user.imagem) {
+      // If not already a data URL, convert to data URL
+      if (!user.imagem.startsWith('data:image')) {
+        user.imagem = `data:image/jpeg;base64,${user.imagem}`;
+      }
+    }
+
+    res.status(200).json(user);
   } catch (error) {
-    console.error('Error fetching user by name:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Erro ao buscar usuário:', error);
+    res.status(500).json({
+      error: 'Erro ao buscar usuário',
+      details: error.message,
+    });
   }
 });
+
+// Create a new sprint
 router.post('/criar-sprint', verificarToken, async (req, res) => {
   try {
     const { projectId, name, deliveryDate } = req.body;
@@ -112,8 +169,7 @@ router.post('/criar-sprint', verificarToken, async (req, res) => {
     const query = `
       INSERT INTO sprints 
       (projectId, name, deliveryDate, criado_por) 
-      VALUES (?, ?, ?, ?)
-    `;
+      VALUES (?, ?, ?, ?)`;
 
     const result = await conexao.execute({
       sql: query,
@@ -123,7 +179,7 @@ router.post('/criar-sprint', verificarToken, async (req, res) => {
     res.status(201).json({
       message: 'Sprint criada com sucesso',
       sprint: {
-        id: Number(result.lastInsertRowid),
+        id: Number(result.lastInsertRowid), // SQLite uses lastInsertRowid
         projectId,
         name,
         deliveryDate,
@@ -134,6 +190,8 @@ router.post('/criar-sprint', verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar sprint' });
   }
 });
+
+// Create a new daily
 router.post('/criar-daily', verificarToken, async (req, res) => {
   try {
     const { projectId, sprintId, name, description, deliveryDate, tag } = req.body;
@@ -142,8 +200,7 @@ router.post('/criar-daily', verificarToken, async (req, res) => {
     const query = `
       INSERT INTO dailys 
       (projectId, sprintId, name, description, deliveryDate, tag, criado_por) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
     const result = await conexao.execute({
       sql: query,
@@ -167,6 +224,8 @@ router.post('/criar-daily', verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao criar daily' });
   }
 });
+
+// Update daily tag
 router.put('/atualizar-daily-tag', verificarToken, async (req, res) => {
   try {
     const { dailyId, newTag } = req.body;
@@ -174,8 +233,7 @@ router.put('/atualizar-daily-tag', verificarToken, async (req, res) => {
     const query = `
       UPDATE dailys 
       SET tag = ? 
-      WHERE id = ?
-    `;
+      WHERE id = ?`;
 
     const result = await conexao.execute({
       sql: query,
@@ -191,14 +249,15 @@ router.put('/atualizar-daily-tag', verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao atualizar tag da daily' });
   }
 });
+
+// Delete daily
 router.delete('/deletar-daily/:dailyId', verificarToken, async (req, res) => {
   try {
     const { dailyId } = req.params;
 
     const query = `
       DELETE FROM dailys 
-      WHERE id = ?
-    `;
+      WHERE id = ?`;
 
     const result = await conexao.execute({
       sql: query,
@@ -214,17 +273,11 @@ router.delete('/deletar-daily/:dailyId', verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao deletar daily' });
   }
 });
+
+// Finalize sprint
 router.post('/finalizar-sprint', verificarToken, async (req, res) => {
   const { projectId, sprintId, name, evaluationScores } = req.body;
   const userId = req.user.id;
-
-  console.log('Sprint Finalization Request:', {
-    projectId,
-    sprintId,
-    name,
-    evaluationScores,
-    userId,
-  });
 
   // Validate input
   if (!projectId || !sprintId || !name || !evaluationScores) {
@@ -234,8 +287,6 @@ router.post('/finalizar-sprint', verificarToken, async (req, res) => {
   const transaction = await conexao.transaction();
 
   try {
-    // Detailed logging and verification steps
-
     // 1. Verify project exists
     const checkProjectQuery = 'SELECT * FROM projetos WHERE id = ?';
     const projectCheckResult = await transaction.execute({
@@ -262,15 +313,14 @@ router.post('/finalizar-sprint', verificarToken, async (req, res) => {
       return res.status(404).json({ error: 'Sprint não encontrada no projeto' });
     }
 
-    // 3. Insert into finalized sprints with explicit column names
-    const insertQuery = `
+    // 3. Insert into finalized sprints
+    const insertSprintQuery = `
       INSERT INTO sprintsfinalizadas 
       (projectId, name, atividades, equipe, comunicacao, entregas, finalizado_por) 
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
 
-    const result = await transaction.execute({
-      sql: insertQuery,
+    const sprintFinalResult = await transaction.execute({
+      sql: insertSprintQuery,
       args: [
         projectId,
         name,
@@ -282,16 +332,58 @@ router.post('/finalizar-sprint', verificarToken, async (req, res) => {
       ],
     });
 
-    // 4. Delete associated dailys
-    const deleteDailysQuery = 'DELETE FROM dailys WHERE sprintId = ? AND projectId = ?';
-    await transaction.execute({
-      sql: deleteDailysQuery,
+    const finalizedSprintId = Number(sprintFinalResult.lastInsertRowid);
+
+    // 4. Fetch associated dailys
+    const getDailysQuery = 'SELECT * FROM dailys WHERE sprintId = ? AND projectId = ?';
+    const dailysResult = await transaction.execute({
+      sql: getDailysQuery,
       args: [sprintId, projectId],
     });
 
+    if (dailysResult.rows.length > 0) {
+      // Prepare batch insert for dailys_finalizadas
+      const insertDailysQuery = `
+        INSERT INTO dailys_finalizadas 
+        (projectId, sprintId, name, description, deliveryDate, tag, finalizado_por, data_finalizacao) 
+        VALUES ${dailysResult.rows.map(() => '(?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)').join(', ')}`;
+
+      const dailysArgs = dailysResult.rows.flatMap((daily) => [
+        daily.projectId,
+        finalizedSprintId, // Use the new finalized sprint ID
+        daily.name,
+        daily.description || '',
+        daily.deliveryDate,
+        daily.tag || 'Concluido',
+        userId,
+      ]);
+
+      try {
+        // Insert dailys into dailys_finalizadas
+        const insertDailysResult = await transaction.execute({
+          sql: insertDailysQuery,
+          args: dailysArgs,
+        });
+
+        // Delete the original dailys
+        const deleteDailysQuery = 'DELETE FROM dailys WHERE sprintId = ? AND projectId = ?';
+        const deleteResult = await transaction.execute({
+          sql: deleteDailysQuery,
+          args: [sprintId, projectId],
+        });
+      } catch (insertError) {
+        console.error('Error inserting dailys into dailys_finalizadas:', insertError);
+        await transaction.rollback();
+        return res.status(500).json({
+          error: 'Erro ao mover dailys para finalizadas',
+          details: insertError.message,
+        });
+      }
+    }
+
     // 5. Delete the original sprint
     const deleteSprintQuery = 'DELETE FROM sprints WHERE id = ? AND projectId = ?';
-    await transaction.execute({
+    const deleteSprintResult = await transaction.execute({
       sql: deleteSprintQuery,
       args: [sprintId, projectId],
     });
@@ -299,15 +391,9 @@ router.post('/finalizar-sprint', verificarToken, async (req, res) => {
     // Commit the transaction
     await transaction.commit();
 
-    console.log('Sprint finalizada com sucesso:', {
-      sprintId,
-      projectId,
-      insertedId: Number(result.lastInsertRowid),
-    });
-
     res.status(201).json({
       message: 'Sprint finalizada com sucesso',
-      sprintId: Number(result.lastInsertRowid),
+      sprintId: finalizedSprintId,
     });
   } catch (error) {
     // Rollback the transaction in case of any error
@@ -326,6 +412,8 @@ router.post('/finalizar-sprint', verificarToken, async (req, res) => {
     });
   }
 });
+
+// Fetch sprints for a project
 router.get('/project/:projectId/sprints', verificarToken, async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -342,6 +430,8 @@ router.get('/project/:projectId/sprints', verificarToken, async (req, res) => {
     res.status(500).json({ error: 'Erro ao buscar sprints' });
   }
 });
+
+// Fetch dailies for a project
 router.get('/project/:projectId/dailies', verificarToken, async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -359,4 +449,66 @@ router.get('/project/:projectId/dailies', verificarToken, async (req, res) => {
   }
 });
 
-export default router; // Ensure you have a default export
+// Fetch ended sprints for a project
+router.get('/project/:projectId/ended-sprints', verificarToken, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+
+    // Fetch the ended sprints
+    const endedSprintsQuery = `
+      SELECT 
+        sf.id, 
+        sf.name, 
+        sf.atividades, 
+        sf.equipe, 
+        sf.comunicacao, 
+        sf.entregas,
+        sf.projectId
+      FROM sprintsfinalizadas sf
+      WHERE sf.projectId = ?`;
+
+    const endedSprintsResult = await conexao.execute({
+      sql: endedSprintsQuery,
+      args: [projectId],
+    });
+
+    // For each ended sprint, fetch its dailies
+    const endedSprints = await Promise.all(
+      endedSprintsResult.rows.map(async (sprint) => {
+        // Fetch dailys associated with the original sprint
+        const dailiesQuery = `
+          SELECT 
+            id, 
+            name, 
+            description, 
+            deliveryDate, 
+            tag
+          FROM dailys_finalizadas
+          WHERE projectId = ? AND sprintId = ?`;
+
+        const dailiesResult = await conexao.execute({
+          sql: dailiesQuery,
+          args: [projectId, sprint.id], // Use the id from sprintsfinalizadas
+        });
+
+        return {
+          ...sprint,
+          dailies: dailiesResult.rows,
+          evaluationScores: {
+            atividades: sprint.atividades,
+            equipe: sprint.equipe,
+            comunicacao: sprint.comunicacao,
+            entregas: sprint.entregas,
+          },
+        };
+      })
+    );
+
+    res.status(200).json(endedSprints);
+  } catch (error) {
+    console.error('Erro ao buscar sprints finalizadas:', error);
+    res.status(500).json({ error: 'Erro ao buscar sprints finalizadas' });
+  }
+});
+
+export default router;

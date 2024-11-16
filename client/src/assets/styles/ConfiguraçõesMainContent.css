@@ -67,7 +67,21 @@
   cursor: pointer;
 }
 
-.buttons input {
+.delete-button {
+  position: relative;
+  bottom: -225px;
+  left: 20px;
+  border-radius: 5px;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  box-shadow: 1px 1px 5px rgb(84, 84, 84);
+  color: #ffffff;
+  background-color: #e74c3c;
+  cursor: pointer;
+}
+
+.delete-button .buttons input {
   display: none;
 }
 
@@ -89,6 +103,6 @@
 
 .dark .settings-main-container input,
 .dark .settings-main-container .buttons button,
-.dark .save-button {
+.dark .save-button .dark .delete-button {
   box-shadow: 1px 1px 5px black;
 }

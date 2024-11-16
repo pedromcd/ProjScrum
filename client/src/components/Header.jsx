@@ -3,12 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBell, faBars } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@mui/material';
 import '../assets/styles/Header.css';
-import { useLocation } from 'react-router-dom';
-import { userService } from '../services/api';
-
-const getStoredProjects = () => {
-  return JSON.parse(localStorage.getItem('projects')) || [];
-};
+import { useLocation, useParams } from 'react-router-dom';
+import { userService, projectService } from '../services/api';
 
 const pageNameMapping = {
   '/': 'Meus Projetos',
@@ -19,16 +15,42 @@ const pageNameMapping = {
 
 const Header = ({ toggleNavbar, isNavbarVisible }) => {
   const location = useLocation();
-  const [projectNames, setProjectNames] = useState([]);
+  const params = useParams();
+  const [currentPageName, setCurrentPageName] = useState('');
   const [userName, setUserName] = useState('');
   const [userImage, setUserImage] = useState('');
   const [userRole, setUserRole] = useState('Usuário');
 
   useEffect(() => {
-    const storedProjects = getStoredProjects();
-    const names = storedProjects.map((project) => project.projectName);
-    setProjectNames(names);
-  }, []);
+    const determinePageName = async () => {
+      // Check predefined page mappings first
+      if (pageNameMapping[location.pathname]) {
+        setCurrentPageName(pageNameMapping[location.pathname]);
+        return;
+      }
+
+      // Check if we're on a project page
+      if (location.pathname.startsWith('/project/')) {
+        try {
+          // Fetch project details using the project ID from URL params
+          const projectId = params.projectId;
+          const projectData = await projectService.getProjectById(projectId);
+
+          // Set project name from fetched data
+          setCurrentPageName(projectData.projectName || 'Projeto');
+        } catch (error) {
+          console.error('Error fetching project name:', error);
+          setCurrentPageName('Projeto');
+        }
+        return;
+      }
+
+      // Fallback for any other routes
+      setCurrentPageName('Página');
+    };
+
+    determinePageName();
+  }, [location.pathname, params.projectId]);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -45,17 +67,6 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
 
     loadUserData();
   }, []);
-
-  let currentPageName = pageNameMapping[location.pathname];
-
-  if (!currentPageName && location.pathname !== '/') {
-    const projectName = decodeURIComponent(location.pathname.substring(1));
-    if (projectNames.includes(projectName)) {
-      currentPageName = `${projectName}`;
-    } else {
-      currentPageName = 'Projeto Inválido';
-    }
-  }
 
   return (
     <header className={`header ${isNavbarVisible ? '' : 'full-width'}`}>
@@ -79,7 +90,7 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
             {userName && userName.trim() !== ''
               ? userName
                   .split(' ')
-                  .filter((name) => name.length > 2) // Filtra palavras com mais de 2 caracteres
+                  .filter((name) => name.length > 2)
                   .map((name, index, array) =>
                     index === 0 || index === array.length - 1 ? name[0].toUpperCase() : ''
                   )

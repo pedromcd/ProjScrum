@@ -33,13 +33,6 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
-console.log('Environment Variables:', {
-  DB_HOST: process.env.DB_HOST,
-  DB_USER: process.env.DB_USER,
-  DB_PASSWORD: process.env.DB_PASSWORD ? 'PROVIDED' : 'NOT_PROVIDED',
-  DB_NAME: process.env.DB_NAME,
-});
-
 // Database connection
 connectDatabase();
 

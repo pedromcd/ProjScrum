@@ -3,20 +3,23 @@ import jwt from 'jsonwebtoken';
 export const verificarToken = (req, res, next) => {
   const token = req.cookies.auth_token;
 
-  console.log('Cookies received:', req.cookies);
-  console.log('Auth token:', token);
-
   if (!token) {
-    console.log('No token found');
-    return res.status(403).json({ error: 'Token não encontrado, acesso negado!' });
+    return res.status(401).json({ error: 'Token não fornecido' });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+
+    // Attach the entire decoded user information to the request
+    req.user = {
+      id: decoded.id,
+      email: decoded.email,
+      cargo: decoded.cargo, // Ensure this is being set in the token generation
+    };
+
     next();
   } catch (err) {
-    console.log('Token verification error:', err);
+    console.error('Token verification error:', err);
     return res.status(401).json({ error: 'Token inválido' });
   }
 };

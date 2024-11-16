@@ -13,7 +13,11 @@ function Configuracoes({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAu
         isVisible={isNavbarVisible}
         setIsAuthenticated={setIsAuthenticated}
       />
-      <ConfiguraçõesMainContent isNavbarVisible={isNavbarVisible} />
+      <ConfiguraçõesMainContent
+        isNavbarVisible={isNavbarVisible}
+        theme={theme}
+        setIsAuthenticated={setIsAuthenticated}
+      />
     </div>
   );
 }

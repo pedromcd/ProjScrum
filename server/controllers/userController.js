@@ -59,13 +59,22 @@ export const logar = async (req, res) => {
 
     const token = generateToken(user);
 
-    // Set cookie with the token
-    setCookieToken(res, token);
+    // Set cookie options
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      path: '/',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    };
+
+    res.cookie('auth_token', token, cookieOptions);
 
     res.status(200).json({
       id: user.id,
       nome: user.nome,
       email: user.email,
+      cargo: user.cargo,
     });
   } catch (error) {
     console.error('Erro no login:', error);
@@ -136,9 +145,10 @@ export const updateUser = async (req, res) => {
       params.push(hashedPassword);
     }
 
-    if (imagem) {
+    // Explicitly handle image removal or update
+    if (imagem !== undefined) {
       query += ', imagem = ?';
-      params.push(imagem);
+      params.push(imagem || null); // Use null to clear the image
     }
 
     query += ' WHERE id = ?';
@@ -184,8 +194,6 @@ export const getAllUsers = async (req, res) => {
 export const updateUserRole = async (req, res) => {
   const { userId, role } = req.body;
 
-  console.log('Received update role request:', { userId, role }); // Detailed logging
-
   try {
     // Validate input with more specific checks
     if (!userId) {
@@ -208,49 +216,55 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    // Update user role in the database
-    const updateQuery = 'UPDATE usuarios SET cargo = ? WHERE id = ?';
+    // Check if user exists
+    const checkUserQuery = 'SELECT * FROM usuarios WHERE id = ?';
+    const userResult = await conexao.execute({
+      sql: checkUserQuery,
+      args: [userId],
+    });
 
-    try {
-      const result = await conexao.execute({
-        sql: updateQuery,
-        args: [role, userId],
-      });
-
-      console.log('Update result:', result); // Log the full result
-
-      // Check if any rows were actually updated
-      if (result.rowsAffected === 0) {
-        console.error('No rows updated - User not found', { userId, role });
-        return res.status(404).json({ error: 'Usuário não encontrado' });
-      }
-
-      // Fetch the updated user to return
-      const getUserQuery = 'SELECT id, nome, email, cargo FROM usuarios WHERE id = ?';
-      const userResult = await conexao.execute({
-        sql: getUserQuery,
-        args: [userId],
-      });
-
-      // Additional check for user retrieval
-      if (userResult.rows.length === 0) {
-        console.error('User not found after update', { userId });
-        return res.status(404).json({ error: 'Usuário não encontrado após atualização' });
-      }
-
-      res.status(200).json({
-        message: 'Cargo do usuário atualizado com sucesso',
-        user: userResult.rows[0],
-      });
-    } catch (updateError) {
-      console.error('Database update error:', updateError);
-      res.status(500).json({
-        error: 'Erro ao atualizar cargo no banco de dados',
-        details: updateError.message,
-      });
+    if (userResult.rows.length === 0) {
+      console.error('User not found:', userId);
+      return res.status(404).json({ error: 'Usuário não encontrado' });
     }
+
+    // Get the current role before updating
+    const currentRole = userResult.rows[0].cargo;
+
+    // Update user role
+    const updateQuery = 'UPDATE usuarios SET cargo = ? WHERE id = ?';
+    const updateResult = await conexao.execute({
+      sql: updateQuery,
+      args: [role, userId],
+    });
+
+    // Verify the update
+    const verifyQuery = 'SELECT cargo FROM usuarios WHERE id = ?';
+    const verifyResult = await conexao.execute({
+      sql: verifyQuery,
+      args: [userId],
+    });
+
+    // Check if the role was actually updated
+    if (verifyResult.rows[0]?.cargo !== role) {
+      console.error('Role update failed', {
+        expectedRole: role,
+        actualRole: verifyResult.rows[0]?.cargo,
+      });
+      return res.status(500).json({ error: 'Falha ao atualizar o cargo' });
+    }
+
+    res.status(200).json({
+      message: 'Cargo atualizado com sucesso',
+      previousRole: currentRole,
+      newRole: role,
+    });
   } catch (error) {
-    console.error('Erro ao atualizar cargo do usuário:', error);
+    console.error('Erro detalhado ao atualizar cargo do usuário:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
     res.status(500).json({
       error: 'Erro interno do servidor',
       details: error.message,
@@ -260,12 +274,30 @@ export const updateUserRole = async (req, res) => {
 
 export const getProjetos = async (req, res) => {
   try {
-    const userId = req.user.id; // Assuming your token payload uses 'id'
-    const selectProj = 'SELECT * FROM projetos WHERE criado_por = ?';
+    const userId = req.user.id;
+    const userRole = req.user.cargo; // Assuming you're passing user role in the token
+
+    let selectProj;
+    let queryArgs;
+
+    if (userRole === 'Admin') {
+      // If user is an Admin, fetch all projects
+      selectProj = 'SELECT * FROM projetos';
+      queryArgs = [];
+    } else {
+      // For non-admin users, fetch only projects they're part of
+      selectProj = `
+        SELECT DISTINCT p.* 
+        FROM projetos p
+        LEFT JOIN projeto_usuarios pu ON p.id = pu.projectId
+        WHERE p.criado_por = ? OR pu.userId = ?
+      `;
+      queryArgs = [userId, userId];
+    }
 
     const result = await conexao.execute({
       sql: selectProj,
-      args: [userId],
+      args: queryArgs,
     });
 
     res.status(200).json(result.rows);
@@ -276,10 +308,6 @@ export const getProjetos = async (req, res) => {
 };
 
 export const criarProjeto = async (req, res) => {
-  console.log('Create Project Request Received');
-  console.log('Request Body:', req.body);
-  console.log('User from Token:', req.user);
-
   const { projectName, projectDesc, deliveryDate, projectMembers } = req.body;
   const userId = req.user.id; // Assuming your token payload uses 'id'
 
@@ -297,10 +325,10 @@ export const criarProjeto = async (req, res) => {
   try {
     // Insert project
     const insertProjQuery = `
-            INSERT INTO projetos 
-            (projectName, projectDesc, deliveryDate, criado_por) 
-            VALUES (?, ?, ?, ?)
-        `;
+      INSERT INTO projetos 
+      (projectName, projectDesc, deliveryDate, criado_por) 
+      VALUES (?, ?, ?, ?)
+    `;
 
     let projectResult;
     try {
@@ -320,15 +348,18 @@ export const criarProjeto = async (req, res) => {
     // Convert BigInt to Number safely
     const projectId = Number(projectResult.lastInsertRowid);
 
+    // Ensure the project creator is in the project members
+    const uniqueMembers = Array.from(new Set([...projectMembers, userId]));
+
     // Add project members
-    if (projectMembers && projectMembers.length > 0) {
+    if (uniqueMembers && uniqueMembers.length > 0) {
       const membersQuery = `
-                INSERT INTO projeto_usuarios (projectId, userId) 
-                VALUES ${projectMembers.map(() => '(?, ?)').join(', ')}
-            `;
+        INSERT INTO projeto_usuarios (projectId, userId) 
+        VALUES ${uniqueMembers.map(() => '(?, ?)').join(', ')}
+      `;
 
       // Flatten the array for args
-      const membersArgs = projectMembers.flatMap((memberId) => [projectId, memberId]);
+      const membersArgs = uniqueMembers.flatMap((memberId) => [projectId, memberId]);
 
       try {
         await transaction.execute({
@@ -357,13 +388,13 @@ export const criarProjeto = async (req, res) => {
 
     // Fetch the created project to return full details
     const getProjectQuery = `
-            SELECT p.*, 
-                   GROUP_CONCAT(pu.userId) AS memberIds 
-            FROM projetos p
-            LEFT JOIN projeto_usuarios pu ON p.id = pu.projectId
-            WHERE p.id = ?
-            GROUP BY p.id
-        `;
+      SELECT p.*, 
+             GROUP_CONCAT(pu.userId) AS memberIds 
+      FROM projetos p
+      LEFT JOIN projeto_usuarios pu ON p.id = pu.projectId
+      WHERE p.id = ?
+      GROUP BY p.id
+    `;
 
     let projectDetails;
     try {
@@ -406,10 +437,6 @@ export const criarProjeto = async (req, res) => {
 };
 
 export const deletarProjeto = async (req, res) => {
-  console.log('Delete Project Request Received');
-  console.log('Request Body:', req.body);
-  console.log('User from Token:', req.user);
-
   const { projectId } = req.body;
 
   // Validate input
@@ -464,27 +491,10 @@ export const deletarProjeto = async (req, res) => {
 
     const project = projectResult.rows[0];
 
-    console.log('Detailed Project Information:', {
-      projectId: project.id,
-      projectName: project.projectName,
-      projectOwnerId: project.criado_por,
-      projectOwnerName: project.owner_name,
-      projectOwnerRole: project.owner_role,
-      currentUserId: userId,
-      currentUserName: project.current_user_name,
-      currentUserRole: project.current_user_role,
-    });
-
     // Check project ownership or admin privileges
     const isProjectOwner = project.criado_por === userId;
     const isAdmin = project.current_user_role === 'Admin';
     const isManagerOrAdmin = ['Admin', 'Gerente'].includes(project.current_user_role);
-
-    console.log('Deletion Permissions:', {
-      isProjectOwner,
-      isAdmin,
-      isManagerOrAdmin,
-    });
 
     if (!isProjectOwner && !isManagerOrAdmin) {
       await transaction.rollback();
@@ -537,8 +547,6 @@ export const deletarProjeto = async (req, res) => {
     // Commit the transaction
     await transaction.commit();
 
-    console.log('Deletion successful:', deleteResult);
-
     return res.status(200).json({
       message: 'Projeto excluído com sucesso',
       deletedProjectId: parsedProjectId,
@@ -552,5 +560,215 @@ export const deletarProjeto = async (req, res) => {
       error: 'Erro interno do servidor',
       details: error.message,
     });
+  }
+};
+
+export const finalizeDaily = async (req, res) => {
+  const { dailyId } = req.params;
+  const userId = req.user.id; // Assuming the user ID is available from the token
+
+  const transaction = await conexao.transaction(); // Start a transaction
+
+  try {
+    // Step 1: Retrieve the daily to be finalized
+    const getDailyQuery = 'SELECT * FROM dailys WHERE id = ?';
+    const dailyResult = await transaction.execute({
+      sql: getDailyQuery,
+      args: [dailyId],
+    });
+
+    if (dailyResult.rows.length === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Daily não encontrada' });
+    }
+
+    const daily = dailyResult.rows[0];
+
+    // Step 2: Insert into dailys_finalizadas
+    const insertQuery = `
+      INSERT INTO dailys_finalizadas 
+      (projectId, sprintId, name, description, deliveryDate, tag, finalizado_por) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    await transaction.execute({
+      sql: insertQuery,
+      args: [
+        daily.projectId,
+        daily.sprintId,
+        daily.name,
+        daily.description,
+        daily.deliveryDate,
+        daily.tag || 'Concluido', // Default to 'Concluido' if no tag
+        userId,
+      ],
+    });
+
+    // Step 3: Delete from dailys
+    const deleteQuery = 'DELETE FROM dailys WHERE id = ?';
+    const deleteResult = await transaction.execute({
+      sql: deleteQuery,
+      args: [dailyId],
+    });
+
+    // Commit the transaction
+    await transaction.commit();
+
+    res.status(200).json({
+      message: 'Daily finalizada com sucesso',
+      deletedDailyId: dailyId,
+    });
+  } catch (error) {
+    // Rollback the transaction in case of any error
+    await transaction.rollback();
+
+    console.error('Erro ao finalizar daily:', error);
+    return res.status(500).json({
+      error: 'Erro interno do servidor',
+      details: error.message,
+    });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  const userId = req.user.id;
+
+  // Start a transaction
+  const db = conexao;
+  const transaction = await db.transaction();
+
+  try {
+    // 1. Delete user's project memberships
+    await transaction.execute({
+      sql: 'DELETE FROM projeto_usuarios WHERE userId = ?',
+      args: [userId],
+    });
+
+    // 2. Find projects created by the user
+    const projectsResult = await transaction.execute({
+      sql: 'SELECT id FROM projetos WHERE criado_por = ?',
+      args: [userId],
+    });
+
+    const projectIds = projectsResult.rows.map((row) => row.id);
+
+    if (projectIds.length > 0) {
+      // 3. Delete project-related entries
+      const projectPlaceholders = projectIds.map(() => '?').join(',');
+
+      // Delete project members
+      await transaction.execute({
+        sql: `DELETE FROM projeto_usuarios WHERE projectId IN (${projectPlaceholders})`,
+        args: projectIds,
+      });
+
+      // Delete dailys
+      await transaction.execute({
+        sql: `DELETE FROM dailys WHERE projectId IN (${projectPlaceholders})`,
+        args: projectIds,
+      });
+
+      // Delete sprints
+      await transaction.execute({
+        sql: `DELETE FROM sprints WHERE projectId IN (${projectPlaceholders})`,
+        args: projectIds,
+      });
+
+      // Delete finalized sprints
+      await transaction.execute({
+        sql: `DELETE FROM sprintsfinalizadas WHERE projectId IN (${projectPlaceholders})`,
+        args: projectIds,
+      });
+
+      // Delete projects
+      await transaction.execute({
+        sql: 'DELETE FROM projetos WHERE criado_por = ?',
+        args: [userId],
+      });
+    }
+
+    // 4. Delete user's personal entries
+    await transaction.execute({
+      sql: 'DELETE FROM dailys WHERE criado_por = ?',
+      args: [userId],
+    });
+
+    await transaction.execute({
+      sql: 'DELETE FROM sprints WHERE criado_por = ?',
+      args: [userId],
+    });
+
+    await transaction.execute({
+      sql: 'DELETE FROM sprintsfinalizadas WHERE finalizado_por = ?',
+      args: [userId],
+    });
+
+    // 5. Finally, delete the user
+    const deleteUserResult = await transaction.execute({
+      sql: 'DELETE FROM usuarios WHERE id = ?',
+      args: [userId],
+    });
+
+    // Verify deletion
+    if (deleteUserResult.rowsAffected === 0) {
+      await transaction.rollback();
+      return res.status(404).json({ error: 'Usuário não encontrado' });
+    }
+
+    // Commit the transaction
+    await transaction.commit();
+
+    // Clear authentication cookie
+    res.clearCookie('auth_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'Lax',
+      path: '/',
+    });
+
+    res.status(200).json({ message: 'Conta excluída com sucesso' });
+  } catch (error) {
+    // Rollback the transaction
+    await transaction.rollback();
+
+    console.error('Erro detalhado ao excluir conta:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
+
+    res.status(500).json({
+      error: 'Erro ao excluir conta',
+      details: error.message,
+    });
+  }
+};
+
+export const getProjectById = async (req, res) => {
+  const { projectId } = req.params;
+
+  try {
+    const selectProjectQuery = `
+      SELECT p.*, 
+             GROUP_CONCAT(pu.userId) AS projectMembers 
+      FROM projetos p
+      LEFT JOIN projeto_usuarios pu ON p.id = pu.projectId
+      WHERE p.id = ?
+      GROUP BY p.id
+    `;
+
+    const projectResult = await conexao.execute({
+      sql: selectProjectQuery,
+      args: [projectId],
+    });
+
+    if (projectResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Projeto não encontrado' });
+    }
+
+    res.status(200).json(projectResult.rows[0]);
+  } catch (error) {
+    console.error('Erro ao buscar projeto:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
   }
 };

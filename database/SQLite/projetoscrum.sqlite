@@ -64,24 +64,25 @@ CREATE TABLE dailys (
   tag TEXT CHECK (tag IN ('Pendente', 'Em progresso', 'Concluido')) NOT NULL DEFAULT 'Pendente',
   criado_por INTEGER NOT NULL,
   data_criacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sprintId) REFERENCES sprints(id),
-  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (sprintId) REFERENCES sprints(id) ON DELETE CASCADE,  -- Cascading delete for sprintId
+  FOREIGN KEY (projectId) REFERENCES projetos(id) ON DELETE CASCADE,  -- Cascading delete for projectId
   FOREIGN KEY (criado_por) REFERENCES usuarios(id)
 );
 
 -- -----------------------------------------------------
--- Table `sprintsfinalizadas`
+-- Table `dailys_finalizadas`
 -- -----------------------------------------------------
-CREATE TABLE sprintsfinalizadas (
+CREATE TABLE dailys_finalizadas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   projectId INTEGER NOT NULL,
+  sprintId INTEGER NOT NULL,
   name TEXT NOT NULL,
-  atividades INTEGER NOT NULL,
-  equipe INTEGER NOT NULL,
-  comunicacao INTEGER NOT NULL,
-  entregas INTEGER NOT NULL,
-  finalizado_por INTEGER NOT NULL,
+  description TEXT,
+  deliveryDate DATE NOT NULL,
+  tag TEXT CHECK (tag IN ('Pendente', 'Em progresso', 'Concluido')) NOT NULL DEFAULT 'Concluido',
+  finalizado_por INTEGER NOT NULL,  -- User who finalized the daily
   data_finalizacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (projectId) REFERENCES projetos(id),
+  FOREIGN KEY (sprintId) REFERENCES sprints(id) ON DELETE CASCADE,
+  FOREIGN KEY (projectId) REFERENCES projetos(id) ON DELETE CASCADE,
   FOREIGN KEY (finalizado_por) REFERENCES usuarios(id)
 );

@@ -3,9 +3,10 @@ import jwt from 'jsonwebtoken';
 export const generateToken = (user) => {
   return jwt.sign(
     {
-      id: user.id, // Use 'id' instead of 'codigoUser'
+      id: user.id,
       email: user.email,
       nome: user.nome,
+      cargo: user.cargo || 'Usuário',
     },
     process.env.JWT_SECRET,
     { expiresIn: '24h' }

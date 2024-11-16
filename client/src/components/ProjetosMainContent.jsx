@@ -1,4 +1,3 @@
-// ProjetosMainContent.jsx
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark, faPlus, faTrashCan } from '@fortawesome/free-solid-svg-icons';
@@ -11,15 +10,20 @@ import 'slick-carousel/slick/slick-theme.css';
 import { CustomPrevArrow, CustomNextArrow } from '../components/CustomArrows';
 import { Link } from 'react-router-dom';
 import Select from 'react-select';
-import { userService, projectService } from '../services/api'; // Add this import
+import { userService, projectService } from '../services/api';
+import { Alert, Snackbar } from '@mui/material';
 
 const ProjetosMainContent = ({ isNavbarVisible }) => {
   const [openModal, setOpenModal] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [isCreating, setIsCreating] = useState(false); // New state to prevent multiple submissions
-
+  const [isCreating, setIsCreating] = useState(false);
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState('');
+  const [alertSeverity, setAlertSeverity] = useState('success');
+  const [userRole, setUserRole] = useState('Usuário');
+  const [isLoading, setIsLoading] = useState(true);
   const {
     projectName,
     setProjectName,
@@ -33,30 +37,57 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     setProjectCards,
     isFormValid,
   } = useProjectCreation();
-
   const [userOptions, setUserOptions] = useState([]);
 
   useEffect(() => {
-    const fetchProjects = async () => {
+    const fetchUserAndProjects = async () => {
       try {
+        setIsLoading(true);
+
+        // First, log the current user information
+        const userData = await userService.getCurrentUser();
+        setUserRole(userData.cargo || 'Usuário');
+
+        // Then fetch projects and log detailed information
         const projects = await projectService.getProjetos();
-        setProjectCards(projects);
+
+        // Ensure projects are set even if the array is empty
+        setProjectCards(projects || []);
       } catch (error) {
-        console.error('Erro ao carregar projetos', error);
+        console.error('Erro detalhado ao carregar projetos:', {
+          message: error.message,
+          response: error.response,
+          data: error.response?.data,
+        });
+
+        setAlertMessage('Erro ao carregar projetos');
+        setAlertSeverity('error');
+        setAlertOpen(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchProjects();
+    fetchUserAndProjects();
   }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // First, get the current user
+        const currentUser = await userService.getCurrentUser();
+
+        // Then fetch all users
         const users = await userService.getAllUsers();
-        const formattedUserOptions = users.map((user) => ({
-          value: user.id,
-          label: user.nome,
-        }));
+
+        // Filter out the current user from the options
+        const formattedUserOptions = users
+          .filter((user) => user.id !== currentUser.id) // Exclude current user
+          .map((user) => ({
+            value: user.id,
+            label: user.nome,
+          }));
+
         setUserOptions(formattedUserOptions);
       } catch (error) {
         console.error('Erro ao carregar usuários', error);
@@ -67,29 +98,32 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
   }, []);
 
   const handleMemberChange = (selectedMembers) => {
-    // Convert selected members to an array of labels
-    const memberNames = selectedMembers.map((member) => member.label);
     setProjectMembers(selectedMembers);
   };
 
   const handleCreateProjectAndCloseModal = async () => {
-    // Prevent multiple submissions
-    if (isCreating) return;
-
-    // Validate form
-    if (!isFormValid) {
-      console.error('Formulário inválido');
-      return;
-    }
+    if (isCreating || !isFormValid) return;
 
     try {
       setIsCreating(true);
+
+      // Get the current user's ID
+      const currentUser = await userService.getCurrentUser();
+
+      // Ensure the current user is in the project members
+      const projectMembersWithCurrentUser = [
+        ...projectMembers.map((member) => member.value),
+        currentUser.id, // Add current user's ID
+      ];
+
+      // Remove duplicates
+      const uniqueProjectMembers = [...new Set(projectMembersWithCurrentUser)];
 
       const newProject = await projectService.criarProjeto({
         projectName,
         projectDesc,
         deliveryDate,
-        projectMembers: projectMembers.map((member) => member.value),
+        projectMembers: uniqueProjectMembers,
       });
 
       // Update project cards
@@ -102,12 +136,14 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
       setProjectMembers([]);
 
       // Close modal
-      setOpenModal(false); // Close the modal here
+      setOpenModal(false);
     } catch (error) {
       console.error('Erro ao criar projeto', error);
-      // Optionally show an error message to the user
+
+      setAlertMessage('Erro ao criar projeto');
+      setAlertSeverity('error');
+      setAlertOpen(true);
     } finally {
-      // Reset creating state
       setIsCreating(false);
     }
   };
@@ -131,12 +167,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     if (!selectedCard) return;
 
     try {
-      console.log('Attempting to delete project:', {
-        projectId: selectedCard,
-        projectName: projectCards.find((p) => p.id === selectedCard)?.projectName,
-      });
-
-      const response = await projectService.deletarProjeto(selectedCard);
+      await projectService.deletarProjeto(selectedCard);
 
       // Remove the deleted project from the list
       const newProjectCards = projectCards.filter((project) => project.id !== selectedCard);
@@ -148,29 +179,28 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
       setSelectedCard(null);
 
       // Show a success message
-      alert('Projeto deletado com sucesso');
+      setAlertMessage('Projeto deletado com sucesso');
+      setAlertSeverity('success');
+      setAlertOpen(true);
     } catch (error) {
-      console.error('Erro completo ao deletar projeto:', {
-        error,
-        response: error.response,
-        data: error.response?.data,
-      });
+      console.error('Erro ao deletar projeto:', error);
 
-      // More detailed error handling
-      const errorMessage =
-        error.response?.data?.error ||
-        error.error ||
-        (typeof error === 'object' ? JSON.stringify(error) : 'Erro ao deletar projeto');
+      const errorMessage = error.response?.data?.error || error.error || 'Erro ao deletar projeto';
 
       // Show a more informative error message
-      alert(`Erro ao deletar projeto: ${errorMessage}`);
-
-      // Additional context logging
-      if (error.response?.data?.details) {
-        console.log('Detalhes do erro:', error.response.data.details);
-      }
+      setAlertMessage(`Erro ao deletar projeto: ${errorMessage}`);
+      setAlertSeverity('error');
+      setAlertOpen(true);
     }
   };
+
+  const handleAlertClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setAlertOpen(false);
+  };
+
   const settings = {
     dots: true,
     infinite: false,
@@ -233,7 +263,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
               />
             </li>
             <li>
-              <p>Descrição</p>
+              <p>Descrição </p>
               <input
                 type='text'
                 placeholder='Descrição do projeto'
@@ -270,7 +300,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
         </div>
       </Modal>
 
-      {projectCards.length > 0 && (
+      {projectCards.length > 0 ? (
         <div className='project-cards-container'>
           <Slider {...settings} prevArrow={<CustomPrevArrow />} nextArrow={<CustomNextArrow />}>
             {projectCards.map((project) => (
@@ -279,7 +309,7 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
                 className={`project-card ${deleteMode ? 'shake' : ''}`}
                 onClick={() => handleCardClick(project.id)}
               >
-                <Link className='link' to={`/${project.projectName}`}>
+                <Link className='link' to={`/project/${project.id}`}>
                   <div className='project-cards'>
                     <h1>{project.projectName}</h1>
                     <h2>{project.projectDesc}</h2>
@@ -291,6 +321,8 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
             ))}
           </Slider>
         </div>
+      ) : (
+        <div className='no-projects-message'>{userRole === 'Admin' ? '' : ''}</div>
       )}
 
       {/* Delete Confirmation Modal */}
@@ -309,6 +341,18 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
           </div>
         </Modal>
       )}
+
+      <Snackbar
+        open={alertOpen}
+        autoHideDuration={6000}
+        onClose={handleAlertClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        sx={{ zIndex: 9999 }}
+      >
+        <Alert onClose={handleAlertClose} severity={alertSeverity} sx={{ width: '100%', zIndex: 9999 }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

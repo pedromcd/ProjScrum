@@ -17,7 +17,11 @@ export const userService = {
 
   login: async (credentials) => {
     try {
-      const response = await api.post('/login', credentials);
+      const response = await api.post('/login', {
+        email: credentials.email,
+        senha: credentials.senha,
+        rememberMe: credentials.rememberMe || false,
+      });
       return response.data;
     } catch (error) {
       throw error.response?.data || new Error('Erro ao fazer login');
@@ -71,19 +75,45 @@ export const userService = {
   updateUserRole: async (userData) => {
     try {
       const response = await api.put('/update-user-role', userData);
+
       return response.data;
     } catch (error) {
-      console.error('Erro ao atualizar cargo do usuário:', error.response?.data || error);
+      console.error('Full error in updateUserRole:', {
+        error: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers,
+      });
+
+      // Throw a more informative error
       throw error.response?.data || new Error('Erro ao atualizar cargo do usuário');
     }
   },
 
   getUserByName: async (name) => {
     try {
-      const response = await api.get(`/users/name/${encodeURIComponent(name)}`);
+      // Encode the name to handle special characters
+      const encodedName = encodeURIComponent(name.trim());
+
+      const response = await api.get(`/users/name/${encodedName}`);
+
       return response.data;
     } catch (error) {
-      console.error(`Error fetching user ${name}:`, error);
+      console.error(`Detailed error fetching user ${name}:`, {
+        errorMessage: error.message,
+        response: error.response,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      throw error;
+    }
+  },
+
+  deleteUser: async () => {
+    try {
+      const response = await api.delete('/delete-account');
+      return response;
+    } catch (error) {
+      console.error('Erro ao excluir conta:', error);
       throw error;
     }
   },
@@ -93,10 +123,16 @@ export const projectService = {
   getProjetos: async () => {
     try {
       const response = await api.get('/projetos');
+
+      // Ensure you're returning the data
       return response.data;
     } catch (error) {
-      console.error('Erro ao buscar projetos:', error);
-      throw error.response?.data || new Error('Erro ao buscar projetos');
+      console.error('Detailed error fetching projects:', {
+        message: error.message,
+        response: error.response,
+        data: error.response?.data,
+      });
+      throw error;
     }
   },
 
@@ -112,7 +148,6 @@ export const projectService = {
 
   deletarProjeto: async (projectId) => {
     try {
-      console.log('Deleting project with ID:', projectId);
       const response = await api.delete('/deletar-projeto', {
         data: { projectId },
       });
@@ -145,6 +180,27 @@ export const projectService = {
     }
   },
 
+  getProjectById: async (projectId) => {
+    try {
+      const response = await api.get(`/projects/id/${projectId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Detailed error fetching project:', {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+
+      // Throw a more informative error
+      throw (
+        error.response?.data || {
+          error: 'Erro ao buscar projeto',
+          details: error.message,
+        }
+      );
+    }
+  },
+
   getSprintsByProjectId: async (projectId) => {
     try {
       const response = await api.get(`/project/${projectId}/sprints`);
@@ -172,6 +228,16 @@ export const projectService = {
     } catch (error) {
       console.error('Erro ao salvar sprint finalizada:', error);
       throw error.response?.data || new Error('Erro ao salvar sprint finalizada');
+    }
+  },
+
+  getEndedSprintsByProjectId: async (projectId) => {
+    try {
+      const response = await api.get(`/project/${projectId}/ended-sprints`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar sprints finalizadas:', error);
+      throw error;
     }
   },
 };
@@ -224,6 +290,16 @@ export const sprintService = {
     } catch (error) {
       console.error('Erro ao finalizar sprint:', error);
       throw error.response?.data || new Error('Erro ao finalizar sprint');
+    }
+  },
+
+  finalizarDaily: async (dailyId) => {
+    try {
+      const response = await api.post(`/finalizar-daily/${dailyId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao finalizar daily:', error);
+      throw error.response?.data || new Error('Erro ao finalizar daily');
     }
   },
 };

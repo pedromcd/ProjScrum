@@ -13,6 +13,8 @@ import Select from 'react-select';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import { userService } from './services/api'; // Import the userService
+import ConfiguraçõesMainContent from './components/ConfiguraçõesMainContent';
+import { Alert, Snackbar } from '@mui/material';
 
 export const ModalContext = createContext();
 
@@ -28,18 +30,26 @@ export default function App() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [openModal, setOpenModal] = useState(false);
-  const [newManager, setNewManager] = useState({ user: '', position: '' });
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // First, get the current user
+        const currentUser = await userService.getCurrentUser();
+
+        // Then fetch all users
         const users = await userService.getAllUsers();
 
-        // Transform users to match react-select format
-        const formattedUserList = users.map((user) => ({
-          value: user.id,
-          label: user.nome, // or user.email, depending on what you want to display
-        }));
+        // Transform users to match react-select format, excluding current user
+        const formattedUserList = users
+          .filter((user) => user.id !== currentUser.id) // Exclude current user
+          .map((user) => ({
+            value: user.id,
+            label: user.nome, // or user.email, depending on what you want to display
+          }));
 
         setUserList(formattedUserList);
       } catch (error) {
@@ -93,7 +103,9 @@ export default function App() {
   const handleCreateManager = async () => {
     // Validate inputs
     if (!selectedOption) {
-      setError('Por favor, selecione um usuário');
+      setSnackbarMessage('Por favor, selecione um usuário');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
       return;
     }
 
@@ -102,40 +114,85 @@ export default function App() {
       setError('');
       setSuccess('');
 
-      // Capitalize the first letter of the role to match server-side validation
-      const formattedRole = selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1);
+      // Ensure the role is exactly as expected by the server
+      const roleMapping = {
+        usuario: 'Usuário',
+        gerente: 'Gerente',
+        admin: 'Admin',
+      };
 
-      // Call API to update user role
-      const response = await userService.updateUserRole({
+      const formattedRole = roleMapping[selectedRole.toLowerCase()] || selectedRole;
+
+      const payload = {
         userId: selectedOption.value,
-        role: formattedRole, // Use capitalized role
-      });
+        role: formattedRole,
+      };
 
-      // Update success message
-      setSuccess('Cargo do usuário atualizado com sucesso');
+      try {
+        // Call API to update user role
+        const response = await userService.updateUserRole(payload);
 
-      // Optional: Update the local user list to reflect the change
-      const updatedUserList = userList.map((user) =>
-        user.value === selectedOption.value ? { ...user, role: formattedRole } : user
-      );
-      setUserList(updatedUserList);
+        // Validate response structure
+        if (!response || !response.message) {
+          throw new Error('Resposta inválida do servidor');
+        }
 
-      // Close modal and reset selections
-      setOpenModal(false);
-      setSelectedOption(null);
-      setSelectedRole('usuario');
+        // Show success snackbar
+        setSnackbarMessage(
+          `Cargo do usuário atualizado de ${response.previousRole || 'Não especificado'} para ${
+            response.newRole
+          }`
+        );
+        setSnackbarSeverity('success');
+        setSnackbarOpen(true);
+
+        // Update the local user list to reflect the change
+        const updatedUserList = userList.map((user) =>
+          user.value === selectedOption.value ? { ...user, role: formattedRole } : user
+        );
+        setUserList(updatedUserList);
+
+        // Close modal and reset selections
+        setOpenModal(false);
+        setSelectedOption(null);
+        setSelectedRole('Usuário');
+      } catch (apiError) {
+        // More detailed API error handling
+        console.error('Erro detalhado na API:', apiError);
+
+        // Check if it's an axios error with response
+        const errorMessage =
+          apiError.response?.data?.error || apiError.message || 'Erro ao atualizar cargo do usuário';
+
+        // Show error snackbar
+        setSnackbarMessage(errorMessage);
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+
+        // Log additional error details
+        if (apiError.response) {
+          console.error('Error Response:', {
+            data: apiError.response.data,
+            status: apiError.response.status,
+            headers: apiError.response.headers,
+          });
+        }
+      }
     } catch (err) {
-      // Handle error
-      console.error('Erro completo:', err);
+      // Catch any unexpected errors
+      console.error('Erro inesperado:', err);
 
-      // Check if err is an object with an error property
+      // More detailed error handling
       const errorMessage =
         err.error ||
         (typeof err === 'object' && err.allowedRoles
           ? `Cargo inválido. Opções válidas: ${err.allowedRoles.join(', ')}`
           : 'Erro ao atualizar cargo do usuário');
 
-      setError(errorMessage);
+      // Show error snackbar
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 
@@ -145,6 +202,13 @@ export default function App() {
 
   const handleCloseModal = () => {
     setOpenModal(false);
+  };
+
+  const handleSnackbarClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setSnackbarOpen(false);
   };
 
   if (isLoading) {
@@ -219,7 +283,7 @@ export default function App() {
             }
           />
           <Route
-            path='/:projectName'
+            path='/project/:projectId'
             element={
               <PrivateRoute>
                 <DetalhesProjeto
@@ -269,6 +333,33 @@ export default function App() {
             </div>
           </div>
         </Modal>
+
+        <Snackbar
+          open={snackbarOpen}
+          autoHideDuration={6000}
+          onClose={handleSnackbarClose}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+          sx={{
+            '& .MuiSnackbar-root': {
+              zIndex: 10000, // Very high z-index
+            },
+            '& .MuiAlert-root': {
+              zIndex: 10001, // Slightly higher than the Snackbar container
+            },
+          }}
+        >
+          <Alert
+            onClose={handleSnackbarClose}
+            severity={snackbarSeverity}
+            sx={{
+              width: '100%',
+              zIndex: 10001, // Ensure the alert is above everything
+              position: 'relative',
+            }}
+          >
+            {snackbarMessage}
+          </Alert>
+        </Snackbar>
       </BrowserRouter>
     </ModalContext.Provider>
   );

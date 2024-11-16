@@ -176,14 +176,19 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
     }));
   };
 
-  //Helper function to safely handle project members
   const getProjectMembers = (projectMembers) => {
     if (Array.isArray(projectMembers)) {
-      return projectMembers;
+      return projectMembers.filter((member) => member && member.trim() !== '');
     }
+
     if (typeof projectMembers === 'string') {
-      return projectMembers.split(',').map((member) => member.trim());
+      const members = projectMembers
+        .split(',')
+        .map((member) => member.trim())
+        .filter((member) => member !== '');
+      return members;
     }
+
     return [];
   };
 
@@ -294,20 +299,57 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
   useEffect(() => {
     const fetchUserImages = async () => {
       if (project && project.projectMembers) {
-        const members = getProjectMembers(project.projectMembers);
+        const members = getProjectMembers(project.projectMembers)
+          .map((member) => member.trim())
+          .filter((member) => member !== '');
+
         const images = {};
 
-        // Fetch images for each member
-        for (const member of members) {
-          try {
-            const userData = await userService.getUserByName(member);
-            if (userData.imagem) {
-              images[member] = userData.imagem;
+        // Use Promise.all for concurrent fetching
+        await Promise.all(
+          members.map(async (member) => {
+            try {
+              // Try multiple variations of the name
+              const nameVariations = [
+                member,
+                member.toLowerCase(),
+                member.toUpperCase(),
+                member.split(' ')[0], // First name
+                member.split(' ')[0].toLowerCase(),
+                member.split(' ')[0].toUpperCase(),
+              ];
+
+              for (const name of nameVariations) {
+                try {
+                  const userData = await userService.getUserByName(name);
+
+                  if (userData.imagem) {
+                    // Ensure the image is a valid base64 or URL
+                    if (
+                      userData.imagem.startsWith('data:image') ||
+                      userData.imagem.startsWith('http') ||
+                      userData.imagem.startsWith('/9j/') // Common base64 start
+                    ) {
+                      // Prepend data:image/jpeg;base64, if not already present
+                      const formattedImage = userData.imagem.startsWith('data:image')
+                        ? userData.imagem
+                        : `data:image/jpeg;base64,${userData.imagem}`;
+
+                      images[member] = formattedImage;
+                    } else {
+                      console.warn(`Invalid image format for ${member}`);
+                    }
+                    break; // Stop searching if image is found
+                  }
+                } catch (searchError) {
+                  console.log(`No user found for name variation: ${name}`);
+                }
+              }
+            } catch (error) {
+              console.error(`Error fetching image for ${member}:`, error);
             }
-          } catch (error) {
-            console.error(`Error fetching image for ${member}:`, error);
-          }
-        }
+          })
+        );
 
         setState((prevState) => ({
           ...prevState,
@@ -339,20 +381,35 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
           placement='right'
         >
           <AvatarGroup max={4}>
-            {getProjectMembers(project.projectMembers).map((member, index) =>
-              state.userImages[member] ? (
+            {getProjectMembers(project.projectMembers).map((member, index) => {
+              // Trim the member name to handle potential whitespace
+              const trimmedMember = member.trim();
+              const userImage = state.userImages[trimmedMember];
+
+              return userImage ? (
                 <Avatar
-                  key={index}
+                  key={`avatar-${trimmedMember}-${index}`}
                   className='avatar'
                   sx={{ width: 50, height: 50 }}
-                  src={state.userImages[member]}
+                  src={userImage}
+                  alt={trimmedMember}
+                  imgProps={{
+                    onError: (e) => {
+                      console.error(`Error loading image for ${trimmedMember}:`, e);
+                      e.target.src = ''; // Fallback to initials
+                    },
+                  }}
                 />
               ) : (
-                <Avatar key={index} className='avatar' sx={{ width: 50, height: 50 }}>
-                  {generateAvatarText(member)}
+                <Avatar
+                  key={`avatar-${trimmedMember}-${index}`}
+                  className='avatar'
+                  sx={{ width: 50, height: 50 }}
+                >
+                  {generateAvatarText(trimmedMember)}
                 </Avatar>
-              )
-            )}
+              );
+            })}
           </AvatarGroup>
         </Tooltip>
       </div>

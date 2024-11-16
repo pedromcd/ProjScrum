@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import '../assets/styles/CadastroForm.css';
 import { Link, useNavigate } from 'react-router-dom';
-import { userService } from '../services/api'; // Import the userService
+import { Snackbar, Alert } from '@mui/material';
+import { userService } from '../services/api';
 
 const CadastroForm = () => {
   const [nome, setNome] = useState('');
@@ -9,26 +10,89 @@ const CadastroForm = () => {
   const [senha, setSenha] = useState('');
   const [confirmarSenha, setConfirmarSenha] = useState('');
   const [error, setError] = useState('');
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
+
+  // Email validation regex
+  const validateEmail = (email) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(String(email).toLowerCase());
+  };
+
+  // Password strength validation
+  const validatePassword = (password) => {
+    // At least 8 characters, one uppercase, one lowercase, one number
+    const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
+    return re.test(password);
+  };
 
   const handleCadastro = async (e) => {
     e.preventDefault();
 
-    // Validate inputs
-    if (!nome || !email || !senha || !confirmarSenha) {
-      setError('Por favor, preencha todos os campos');
+    // Trim inputs to remove whitespace
+    const trimmedNome = nome.trim();
+    const trimmedEmail = email.trim();
+
+    // Comprehensive validation
+    if (!trimmedNome) {
+      setError('Por favor, preencha o nome completo');
+      setSnackbarOpen(true);
       return;
     }
 
-    // Check if passwords match
+    // Check name length and format
+    if (trimmedNome.length < 3) {
+      setError('Nome deve ter pelo menos 3 caracteres');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validate email
+    if (!trimmedEmail) {
+      setError('Por favor, preencha o email');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (!validateEmail(trimmedEmail)) {
+      setError('Por favor, insira um email válido');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Validate password
+    if (!senha) {
+      setError('Por favor, preencha a senha');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    if (!validatePassword(senha)) {
+      setError('Senha deve ter no mínimo 8 caracteres, incluindo maiúsculas, minúsculas e números');
+      setSnackbarOpen(true);
+      return;
+    }
+
+    // Check password confirmation
+    if (!confirmarSenha) {
+      setError('Por favor, confirme a senha');
+      setSnackbarOpen(true);
+      return;
+    }
+
     if (senha !== confirmarSenha) {
       setError('As senhas não coincidem');
+      setSnackbarOpen(true);
       return;
     }
 
     try {
       // Send the request to the correct endpoint
-      await userService.register({ nome, email, senha });
+      await userService.register({
+        nome: trimmedNome,
+        email: trimmedEmail,
+        senha,
+      });
 
       // Clear any previous errors
       setError('');
@@ -37,8 +101,14 @@ const CadastroForm = () => {
       navigate('/login');
     } catch (err) {
       // Handle registration errors
-      setError(err.message || 'Erro ao cadastrar usuário');
+      const errorMessage = err.message || 'Erro ao cadastrar usuário';
+      setError(errorMessage);
+      setSnackbarOpen(true);
     }
+  };
+
+  const handleSnackbarClose = () => {
+    setSnackbarOpen(false);
   };
 
   return (
@@ -52,7 +122,6 @@ const CadastroForm = () => {
         </div>
         <div className='cadastro-area'>
           <h1>Cadastro</h1>
-          {error && <p className='error-message'>{error}</p>}
           <form onSubmit={handleCadastro}>
             <ul className='cadastro-inputs'>
               <li>
@@ -99,6 +168,17 @@ const CadastroForm = () => {
           </form>
         </div>
       </div>
+
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={6000}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity='error' sx={{ width: '100%' }}>
+          {error}
+        </Alert>
+      </Snackbar>
     </div>
   );
 };

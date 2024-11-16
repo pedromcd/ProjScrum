@@ -6,7 +6,7 @@ import { useParams } from 'react-router-dom';
 import { projectService } from '../services/api';
 
 const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) => {
-  const { projectName } = useParams();
+  const { projectId } = useParams();
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,15 +17,14 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIs
         setIsLoading(true);
         const startTime = Date.now();
 
-        // Fetch project details
-        const projectData = await projectService.getProjectByName(projectName);
+        // Fetch project details by ID
+        const projectData = await projectService.getProjectById(projectId);
 
         const elapsedTime = Date.now() - startTime;
         if (elapsedTime < 300) {
           await new Promise((resolve) => setTimeout(resolve, 500 - elapsedTime));
         }
 
-        // Ensure projectMembers is an array
         const formattedProjectData = {
           ...projectData,
           projectMembers: projectData.projectMembers
@@ -38,14 +37,21 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIs
         setProject(formattedProjectData);
         setIsLoading(false);
       } catch (error) {
-        console.error('Error fetching project data:', error);
-        setError(error);
+        console.error('Detailed error fetching project data:', {
+          error,
+          projectId,
+        });
+
+        setError({
+          message: error.error || 'Erro ao carregar projeto',
+          details: error.details || 'Detalhes não disponíveis',
+        });
         setIsLoading(false);
       }
     };
 
     fetchProjectData();
-  }, [projectName]);
+  }, [projectId]);
 
   if (isLoading) {
     return (
