@@ -112,7 +112,7 @@ Para iniciar a aplicação backend no modo de desenvolvimento, execute os seguin
 
 ```bash
 cd ProjScrum/server
-npm run dev
+npm start
 ```
 
 ### Observação
