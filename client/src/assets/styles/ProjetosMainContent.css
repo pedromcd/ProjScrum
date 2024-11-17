@@ -7,6 +7,12 @@
   transition: 0.15s;
 }
 
+.projects-main-content .no-create-button {
+  margin-top: 15px;
+  margin-bottom: 35px;
+  height: 20px;
+}
+
 .projects-main-content.full-width {
   margin-left: 0;
 }

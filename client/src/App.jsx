@@ -13,7 +13,6 @@ import Select from 'react-select';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import { userService } from './services/api'; // Import the userService
-import ConfiguraçõesMainContent from './components/ConfiguraçõesMainContent';
 import { Alert, Snackbar } from '@mui/material';
 
 export const ModalContext = createContext();
@@ -33,10 +32,44 @@ export default function App() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [userRole, setUserRole] = useState(() => {
+    // Initialize from localStorage or default
+    return localStorage.getItem('userRole') || 'Usuário';
+  });
+
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      try {
+        const userData = await userService.getCurrentUser();
+        console.log('App - Full User Data:', userData);
+        console.log('App - User Role:', userData.cargo);
+
+        // Update both state and localStorage
+        const normalizedRole = userData.cargo || 'Usuário';
+        setUserRole(normalizedRole);
+        localStorage.setItem('userRole', normalizedRole);
+      } catch (error) {
+        console.error('App - Error fetching user role:', error);
+        // Reset role if fetch fails
+        setUserRole('Usuário');
+        localStorage.removeItem('userRole');
+      }
+    };
+
+    // Only fetch if authenticated
+    if (isAuthenticated) {
+      fetchUserRole();
+    }
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
+        // Check if the current path is not login or cadastro
+        if (window.location.pathname === '/login' || window.location.pathname === '/cadastro') {
+          return; // Skip fetching users
+        }
+
         // First, get the current user
         const currentUser = await userService.getCurrentUser();
 
@@ -72,6 +105,11 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        if (window.location.pathname === '/login' || window.location.pathname === '/cadastro') {
+          setIsLoading(false);
+          return;
+        }
+
         const startTime = Date.now();
 
         await userService.getCurrentUser();
@@ -236,6 +274,7 @@ export default function App() {
                   isNavbarVisible={isNavbarVisible}
                   toggleNavbar={toggleNavbar}
                   setIsAuthenticated={setIsAuthenticated}
+                  userRole={userRole}
                 />
               </PrivateRoute>
             }
@@ -250,6 +289,7 @@ export default function App() {
                   isNavbarVisible={isNavbarVisible}
                   toggleNavbar={toggleNavbar}
                   setIsAuthenticated={setIsAuthenticated}
+                  userRole={userRole}
                 />
               </PrivateRoute>
             }
@@ -264,6 +304,7 @@ export default function App() {
                   isNavbarVisible={isNavbarVisible}
                   toggleNavbar={toggleNavbar}
                   setIsAuthenticated={setIsAuthenticated}
+                  userRole={userRole}
                 />
               </PrivateRoute>
             }
@@ -278,6 +319,7 @@ export default function App() {
                   isNavbarVisible={isNavbarVisible}
                   toggleNavbar={toggleNavbar}
                   setIsAuthenticated={setIsAuthenticated}
+                  userRole={userRole}
                 />
               </PrivateRoute>
             }
@@ -292,6 +334,7 @@ export default function App() {
                   isNavbarVisible={isNavbarVisible}
                   toggleNavbar={toggleNavbar}
                   setIsAuthenticated={setIsAuthenticated}
+                  userRole={userRole}
                 />
               </PrivateRoute>
             }

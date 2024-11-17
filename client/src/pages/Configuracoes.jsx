@@ -3,7 +3,7 @@ import Navbar from '../components/NavBar';
 import Header from '../components/Header';
 import ConfiguraçõesMainContent from '../components/ConfiguraçõesMainContent';
 
-function Configuracoes({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) {
+function Configuracoes({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated, userRole }) {
   return (
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
@@ -12,6 +12,7 @@ function Configuracoes({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAu
         setTheme={setTheme}
         isVisible={isNavbarVisible}
         setIsAuthenticated={setIsAuthenticated}
+        userRole={userRole}
       />
       <ConfiguraçõesMainContent
         isNavbarVisible={isNavbarVisible}

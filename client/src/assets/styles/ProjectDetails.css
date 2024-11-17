@@ -21,6 +21,13 @@
   margin-top: 0px;
 }
 
+.no-create-buttons {
+  margin-top: 12px;
+  margin-bottom: 35px;
+  height: 20px;
+  width: 100%;
+}
+
 .create-button {
   z-index: 1;
   margin-right: 20px;

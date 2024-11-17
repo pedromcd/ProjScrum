@@ -3,7 +3,7 @@ import Navbar from '../components/NavBar';
 import Header from '../components/Header';
 import ProjetosMainContent from '../components/ProjetosMainContent';
 
-function Home({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) {
+function Home({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated, userRole }) {
   return (
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
@@ -12,6 +12,7 @@ function Home({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticat
         setTheme={setTheme}
         isVisible={isNavbarVisible}
         setIsAuthenticated={setIsAuthenticated}
+        userRole={userRole}
       />
       <ProjetosMainContent isNavbarVisible={isNavbarVisible} />
     </div>

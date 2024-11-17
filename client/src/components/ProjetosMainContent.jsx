@@ -236,16 +236,22 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
   return (
     <div className={`projects-main-content ${isNavbarVisible ? '' : 'full-width'}`}>
-      <span className={`trash-icon-project ${deleteMode ? 'active' : ''}`} onClick={handleTrashClick}>
-        <FontAwesomeIcon icon={faTrashCan} />
-      </span>
-
-      <button className='create-button' onClick={() => setOpenModal(true)}>
-        <span className='plus-icon'>
-          <FontAwesomeIcon icon={faPlus} />
+      {(userRole === 'Admin' || userRole === 'Gerente') && (
+        <span className={`trash-icon-project ${deleteMode ? 'active' : ''}`} onClick={handleTrashClick}>
+          <FontAwesomeIcon icon={faTrashCan} />
         </span>
-        Criar Projeto
-      </button>
+      )}
+
+      {userRole === 'Admin' || userRole === 'Gerente' ? (
+        <button className='create-button' onClick={() => setOpenModal(true)}>
+          <span className='plus-icon'>
+            <FontAwesomeIcon icon={faPlus} />
+          </span>
+          Criar Projeto
+        </button>
+      ) : (
+        <div className='no-create-button'></div>
+      )}
 
       <Modal isOpen={openModal}>
         <div className='modal-close-button' onClick={handleCloseModal}>

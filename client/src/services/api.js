@@ -3,6 +3,7 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
   withCredentials: true, // Important for sending cookies
+  timeout: 10000,
 });
 
 export const userService = {
@@ -17,11 +18,17 @@ export const userService = {
 
   login: async (credentials) => {
     try {
-      const response = await api.post('/login', {
-        email: credentials.email,
-        senha: credentials.senha,
-        rememberMe: credentials.rememberMe || false,
-      });
+      const response = await api.post(
+        '/login',
+        {
+          email: credentials.email,
+          senha: credentials.senha,
+          rememberMe: credentials.rememberMe || false,
+        },
+        {
+          withCredentials: true, // Ensure cookies are sent/received
+        }
+      );
       return response.data;
     } catch (error) {
       throw error.response?.data || new Error('Erro ao fazer login');
@@ -124,7 +131,6 @@ export const projectService = {
     try {
       const response = await api.get('/projetos');
 
-      // Ensure you're returning the data
       return response.data;
     } catch (error) {
       console.error('Detailed error fetching projects:', {
@@ -300,6 +306,70 @@ export const sprintService = {
     } catch (error) {
       console.error('Erro ao finalizar daily:', error);
       throw error.response?.data || new Error('Erro ao finalizar daily');
+    }
+  },
+};
+
+export const calendarService = {
+  createEvent: async (eventData) => {
+    try {
+      const response = await api.post('/events', eventData);
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao criar evento:', error);
+      throw error.response?.data || new Error('Erro ao criar evento');
+    }
+  },
+
+  getEvents: async () => {
+    try {
+      const response = await api.get('/events');
+      return response.data;
+    } catch (error) {
+      console.error('Erro ao buscar eventos:', error);
+      throw error.response?.data || new Error('Erro ao buscar eventos');
+    }
+  },
+
+  updateEventDate: async (updateData) => {
+    try {
+      const response = await api.put(`/events/${updateData.eventId}/date`, {
+        newDate: updateData.newDate,
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Erro detalhado ao atualizar data do evento:', {
+        message: error.message,
+        response: error.response,
+        config: error.config,
+      });
+
+      // Throw a more informative error
+      throw (
+        error.response?.data || {
+          error: 'Erro ao atualizar data do evento',
+          details: error.message,
+        }
+      );
+    }
+  },
+
+  deleteEvent: async (eventId) => {
+    try {
+      // Ensure eventId is passed correctly
+      if (!eventId) {
+        throw new Error('Event ID is required');
+      }
+
+      const response = await api.delete(`/events/${eventId}`);
+      return response.data;
+    } catch (error) {
+      console.error('Detailed deletion error:', {
+        message: error.message,
+        response: error.response,
+        config: error.config,
+      });
+      throw error.response?.data || new Error('Erro ao deletar evento');
     }
   },
 };

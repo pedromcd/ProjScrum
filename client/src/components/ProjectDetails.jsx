@@ -7,7 +7,7 @@ import { Avatar, AvatarGroup, Tooltip } from '@mui/material';
 import { formatDate } from '../utils/generateCard';
 import { projectService, userService, sprintService } from '../services/api';
 
-const ProjectDetails = ({ isNavbarVisible, project }) => {
+const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
   const [state, setState] = useState({
     sprints: [],
     dailies: [],
@@ -38,6 +38,7 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [dailyToDelete, setDailyToDelete] = useState(null);
   const [, updateState] = React.useState();
+
   const forceUpdate = React.useCallback(() => updateState({}), []);
 
   const handleDeleteDaily = (dailyId) => {
@@ -415,29 +416,35 @@ const ProjectDetails = ({ isNavbarVisible, project }) => {
       </div>
 
       <div className='button-container'>
-        <button
-          className='create-button'
-          onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
-        >
-          <span className='plus-icon'>
-            <FontAwesomeIcon icon={faPlus} />
-          </span>
-          Criar Sprint
-        </button>
+        {userRole === 'Admin' || userRole === 'Gerente' ? (
+          <>
+            <button
+              className='create-button'
+              onClick={() => setState((prevState) => ({ ...prevState, openSprintModal: true }))}
+            >
+              <span className='plus-icon'>
+                <FontAwesomeIcon icon={faPlus} />
+              </span>
+              Criar Sprint
+            </button>
 
-        <button
-          className='create-button'
-          onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
-        >
-          <span className='plus-icon'>
-            <FontAwesomeIcon icon={faPlus} />
-          </span>
-          Criar Daily
-        </button>
+            <button
+              className='create-button'
+              onClick={() => setState((prevState) => ({ ...prevState, openDailyModal: true }))}
+            >
+              <span className='plus-icon'>
+                <FontAwesomeIcon icon={faPlus} />
+              </span>
+              Criar Daily
+            </button>
 
-        <button className='end-sprint' onClick={handleEvaluation}>
-          Finalizar sprint
-        </button>
+            <button className='end-sprint' onClick={handleEvaluation}>
+              Finalizar sprint
+            </button>
+          </>
+        ) : (
+          <div className='no-create-buttons'></div>
+        )}
       </div>
 
       <Modal isOpen={state.openSprintModal}>

@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import { conexao } from '../config/database.js';
 import { generateToken, setCookieToken } from '../utils/tokenUtils.js';
 
+// user
 export const cadastrarUser = async (req, res) => {
   const { nome, email, senha } = req.body;
 
@@ -272,6 +273,7 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
+// projetos
 export const getProjetos = async (req, res) => {
   try {
     const userId = req.user.id;
@@ -770,5 +772,251 @@ export const getProjectById = async (req, res) => {
   } catch (error) {
     console.error('Erro ao buscar projeto:', error);
     res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+};
+
+// calendario
+export const createEvent = async (req, res) => {
+  const { title, start, end, description } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Ensure only date is stored if no specific time is provided
+    const formattedStart = start.includes('T')
+      ? new Date(start).toISOString()
+      : new Date(start).toISOString().split('T')[0];
+
+    const formattedEnd = end
+      ? end.includes('T')
+        ? new Date(end).toISOString()
+        : new Date(end).toISOString().split('T')[0]
+      : null;
+
+    const query = `
+      INSERT INTO events 
+      (title, start, end, description, user_id) 
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    const result = await conexao.execute({
+      sql: query,
+      args: [title, formattedStart, formattedEnd, description, userId],
+    });
+
+    res.status(201).json({
+      id: result.lastInsertRowid,
+      title,
+      start: formattedStart,
+      end: formattedEnd,
+      description,
+    });
+  } catch (error) {
+    console.error('Error creating event:', error);
+    res.status(500).json({ error: 'Error creating event' });
+  }
+};
+
+export const getAllEvents = async (req, res) => {
+  // Add logging to help diagnose the issue
+  console.log('Event Request User:', req.user);
+
+  // Validate that user is authenticated
+  if (!req.user || !req.user.id) {
+    return res.status(401).json({
+      error: 'Usuário não autenticado',
+      details: 'Não foi possível identificar o usuário a partir do token',
+    });
+  }
+
+  const userId = req.user.id;
+
+  try {
+    const query = `SELECT * FROM events WHERE user_id = ?`;
+    const result = await conexao.execute({
+      sql: query,
+      args: [userId],
+    });
+
+    res.status(200).json(result.rows);
+  } catch (error) {
+    console.error('Detailed error fetching events:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+    });
+    res.status(500).json({
+      error: 'Erro ao buscar eventos',
+      details: error.message,
+    });
+  }
+};
+
+export const updateEvent = async (req, res) => {
+  const { id } = req.params;
+  const { title, start, end, description } = req.body;
+  const userId = req.user.id;
+
+  try {
+    // Strict validation to prevent unauthorized modifications
+    const existingEventQuery = 'SELECT * FROM events WHERE id = ? AND user_id = ?';
+    const existingEventResult = await conexao.execute({
+      sql: existingEventQuery,
+      args: [id, userId],
+    });
+
+    if (existingEventResult.rows.length === 0) {
+      return res.status(403).json({
+        error: 'Não autorizado a modificar este evento',
+      });
+    }
+
+    // Preserve original event details
+    const originalEvent = existingEventResult.rows[0];
+
+    // Only allow specific fields to be updated
+    const query = `
+      UPDATE events 
+      SET 
+        title = COALESCE(?, title),
+        description = COALESCE(?, description)
+      WHERE id = ? AND user_id = ?
+    `;
+
+    await conexao.execute({
+      sql: query,
+      args: [title || originalEvent.title, description || originalEvent.description, id, userId],
+    });
+
+    res.status(200).json({
+      message: 'Evento atualizado com sucesso',
+      event: {
+        ...originalEvent,
+        title: title || originalEvent.title,
+        description: description || originalEvent.description,
+      },
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar evento:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      details: error.message,
+    });
+  }
+};
+
+export const deleteEvent = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+
+  try {
+    const query = `DELETE FROM events WHERE id = ? AND user_id = ?`;
+    const result = await conexao.execute({
+      sql: query,
+      args: [id, userId],
+    });
+
+    if (result.rowsAffected === 0) {
+      return res.status(404).json({
+        error: 'Evento não encontrado ou você não tem permissão para excluí-lo',
+      });
+    }
+
+    res.status(200).json({
+      message: 'Evento deletado com sucesso',
+      deletedEventId: id,
+    });
+  } catch (error) {
+    console.error('Erro ao deletar evento:', error);
+    res.status(500).json({
+      error: 'Erro ao deletar evento',
+      details: error.message,
+    });
+  }
+};
+
+export const getEventById = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const query = `SELECT * FROM events WHERE id = ?`;
+    const result = await conexao.execute({
+      sql: query,
+      args: [id],
+    });
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Event not found' });
+    }
+
+    res.status(200).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error fetching event:', error);
+    res.status(500).json({ error: 'Error fetching event' });
+  }
+};
+
+export const updateEventDate = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { newDate } = req.body;
+    const userId = req.user.id;
+
+    // Validate input
+    if (!eventId || !newDate) {
+      return res.status(400).json({
+        error: 'ID do evento e nova data são obrigatórios',
+      });
+    }
+
+    // Find the existing event
+    const findEventQuery = 'SELECT * FROM events WHERE id = ? AND user_id = ?';
+    const eventResult = await conexao.execute({
+      sql: findEventQuery,
+      args: [eventId, userId],
+    });
+
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({
+        error: 'Evento não encontrado',
+      });
+    }
+
+    const existingEvent = eventResult.rows[0];
+
+    // Prepare the update query - use the exact date string
+    const updateQuery = 'UPDATE events SET start = ?, end = ? WHERE id = ? AND user_id = ?';
+    const updateResult = await conexao.execute({
+      sql: updateQuery,
+      args: [
+        newDate, // Use the exact date string
+        existingEvent.end ? newDate : null, // Preserve original end logic
+        eventId,
+        userId,
+      ],
+    });
+
+    // Verify the update
+    if (updateResult.rowsAffected === 0) {
+      return res.status(500).json({
+        error: 'Falha ao atualizar o evento',
+      });
+    }
+
+    // Fetch the updated event
+    const updatedEventQuery = 'SELECT * FROM events WHERE id = ?';
+    const updatedEventResult = await conexao.execute({
+      sql: updatedEventQuery,
+      args: [eventId],
+    });
+
+    res.status(200).json({
+      message: 'Data do evento atualizada com sucesso',
+      event: updatedEventResult.rows[0],
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar data do evento:', error);
+    res.status(500).json({
+      error: 'Erro interno do servidor',
+      details: error.message,
+    });
   }
 };

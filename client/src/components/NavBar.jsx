@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faClockRotateLeft,
@@ -19,9 +19,11 @@ const Navbar = ({
   setTheme,
   isVisible,
   setIsAuthenticated = () => {}, // Default no-op function
+  userRole,
 }) => {
   const { setOpenModal } = useContext(ModalContext);
   const navigate = useNavigate();
+  console.log('Navbar - Received userRole:', userRole);
 
   const toggle_mode = () => {
     theme == 'light' ? setTheme('dark') : setTheme('light');
@@ -35,16 +37,19 @@ const Navbar = ({
       // Update authentication state
       setIsAuthenticated(false);
 
+      // Reset user role to default
+      setUserRole('Usuário'); // If you have a way to update userRole in parent component
+
       // Remove any stored user data
       localStorage.removeItem('userName');
       localStorage.removeItem('image');
       localStorage.removeItem('formData');
+      localStorage.removeItem('userRole'); // Add this line
 
       // Redirect to login page
       navigate('/login');
     } catch (error) {
       console.error('Logout failed', error);
-      // Optional: Add error handling, such as showing a toast message
     }
   };
 
@@ -84,12 +89,15 @@ const Navbar = ({
                 Histórico
               </Link>
             </li>
-            <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
-              <span className='icon-wrapper-navbar' onClick={() => setOpenModal(true)}>
-                <FontAwesomeIcon icon={faUserPlus} />
-              </span>
-              <span onClick={() => setOpenModal(true)}>Criar Usuário Gerente</span>
-            </li>
+
+            {userRole === 'Admin' && (
+              <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
+                <span className='icon-wrapper-navbar' onClick={() => setOpenModal(true)}>
+                  <FontAwesomeIcon icon={faUserPlus} />
+                </span>
+                <span onClick={() => setOpenModal(true)}>Criar Usuário Gerente</span>
+              </li>
+            )}
             <li className={`navbar-items ${isVisible ? '' : 'collapsed'}`}>
               <Link to={'/settings'} className='link'>
                 <span className='icon-wrapper-navbar'>

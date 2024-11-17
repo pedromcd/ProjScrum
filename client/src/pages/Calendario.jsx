@@ -3,7 +3,7 @@ import Navbar from '../components/NavBar';
 import Header from '../components/Header';
 import CalendarioMainContent from '../components/CalendarioMainContent';
 
-function Calendario({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) {
+function Calendario({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated, userRole }) {
   return (
     <div className={`container ${theme}`}>
       <Header toggleNavbar={toggleNavbar} isNavbarVisible={isNavbarVisible} />
@@ -12,6 +12,7 @@ function Calendario({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthe
         setTheme={setTheme}
         isVisible={isNavbarVisible}
         setIsAuthenticated={setIsAuthenticated}
+        userRole={userRole}
       />
       <CalendarioMainContent isNavbarVisible={isNavbarVisible} />
     </div>

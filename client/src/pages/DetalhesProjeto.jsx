@@ -5,7 +5,14 @@ import ProjectDetails from '../components/ProjectDetails';
 import { useParams } from 'react-router-dom';
 import { projectService } from '../services/api';
 
-const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIsAuthenticated }) => {
+const DetalhesProjeto = ({
+  theme,
+  setTheme,
+  isNavbarVisible,
+  toggleNavbar,
+  setIsAuthenticated,
+  userRole,
+}) => {
   const { projectId } = useParams();
   const [project, setProject] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -82,8 +89,9 @@ const DetalhesProjeto = ({ theme, setTheme, isNavbarVisible, toggleNavbar, setIs
         setTheme={setTheme}
         isVisible={isNavbarVisible}
         setIsAuthenticated={setIsAuthenticated}
+        userRole={userRole}
       />
-      <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} />
+      <ProjectDetails isNavbarVisible={isNavbarVisible} project={project} userRole={userRole} />
     </div>
   );
 };

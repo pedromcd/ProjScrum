@@ -11,6 +11,12 @@ import {
   deletarProjeto,
   finalizeDaily,
   deleteUser,
+  createEvent,
+  getAllEvents,
+  getEventById,
+  updateEvent,
+  deleteEvent,
+  updateEventDate,
 } from '../controllers/userController.js';
 import { verificarToken } from '../middlewares/authMiddleware.js';
 import { conexao } from '../config/database.js';
@@ -28,6 +34,12 @@ router.post('/criar-projeto', verificarToken, criarProjeto);
 router.delete('/deletar-projeto', verificarToken, deletarProjeto);
 router.post('/finalizar-daily/:dailyId', verificarToken, finalizeDaily);
 router.delete('/delete-account', verificarToken, deleteUser);
+router.post('/events', verificarToken, createEvent);
+router.get('/events', verificarToken, getAllEvents);
+router.get('/events/:id', verificarToken, getEventById);
+router.put('/events/:id', verificarToken, updateEvent);
+router.delete('/events/:id', verificarToken, deleteEvent);
+router.put('/events/:eventId/date', verificarToken, updateEventDate);
 
 // Fetch projects for a user
 router.get('/projetos', verificarToken, async (req, res) => {
