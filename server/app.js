@@ -16,27 +16,23 @@ dotenv.config({
 
 const app = express();
 
-app.use(express.json({ limit: '10mb' })); // Increase JSON payload limit
-app.use(express.urlencoded({ limit: '10mb', extended: true })); // Increase URL-encoded payload limit
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.set('json replacer', (key, value) => (typeof value === 'bigint' ? value.toString() : value));
 
-// CORS configuration
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'], // Your frontend URLs
-    credentials: true, // Important for cookies
+    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    credentials: true,
   })
 );
 
-// Add these middleware before routes
 app.use(express.json());
 app.use(cookieParser());
 
-// Database connection
 connectDatabase();
 
-// Routes
 app.use('/api', userRoutes);
 
 const PORT = process.env.PORT || 3000;

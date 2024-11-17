@@ -25,7 +25,6 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
   const calendarRef = useRef(null);
   const trashRef = useRef(null);
 
-  // Fetch events when component mounts
   useEffect(() => {
     const fetchEvents = async () => {
       try {
@@ -38,7 +37,6 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
         } else {
           setEvents(fetchedEvents);
 
-          // Wait for the calendar ref to be available
           const addEventsToCalendar = () => {
             if (calendarRef.current) {
               const calendarApi = calendarRef.current.getApi();
@@ -46,7 +44,6 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
                 calendarApi.addEvent(event);
               });
             } else {
-              // If ref is not available, retry after a short delay
               setTimeout(addEventsToCalendar, 100);
             }
           };
@@ -80,17 +77,13 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
     try {
       const newEvent = await calendarService.createEvent(eventData);
 
-      // Add event to calendar
       calendarRef.current.getApi().addEvent(newEvent);
 
-      // Update local state
       setEvents([...events, newEvent]);
 
-      // Reset form and close modal
       resetForm();
       setOpenModal(false);
 
-      // Show success message
       setAlertMessage('Evento criado com sucesso');
       setAlertSeverity('success');
       setAlertOpen(true);
@@ -103,21 +96,17 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
 
   const handleDeleteEvent = async (event) => {
     try {
-      // Ensure we're using the correct event ID
       const eventId = typeof event === 'object' ? event.id : event;
 
       await calendarService.deleteEvent(eventId);
 
-      // Remove from calendar
       if (typeof event === 'object' && event.remove) {
         event.remove();
       }
 
-      // Update local state
       const updatedEvents = events.filter((e) => e.id !== eventId);
       setEvents(updatedEvents);
 
-      // Show success message
       setAlertMessage('Evento deletado com sucesso');
       setAlertSeverity('success');
       setAlertOpen(true);
@@ -185,24 +174,19 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
               hour12: false,
               omitZeroMinute: true,
             }}
-            // Prevent events from being resized
             eventResize={(resizeInfo) => {
               resizeInfo.revert();
               setAlertMessage('Redimensionamento de evento não permitido');
               setAlertSeverity('error');
               setAlertOpen(true);
             }}
-            // Custom event drop handler
             eventDrop={async (dropInfo) => {
               try {
-                // Prevent default behavior
                 dropInfo.jsEvent.preventDefault();
 
-                // Get the original and new event
                 const originalEvent = dropInfo.oldEvent;
                 const newEvent = dropInfo.event;
 
-                // Format date to YYYY-MM-DD exactly as it appears
                 const formatDateToYMD = (date) => {
                   const year = date.getFullYear();
                   const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -210,13 +194,11 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
                   return `${year}-${month}-${day}`;
                 };
 
-                // Call your backend service to update the event
                 const updatedEventResponse = await calendarService.updateEventDate({
                   eventId: originalEvent.id,
                   newDate: formatDateToYMD(newEvent.start),
                 });
 
-                // Update local state
                 setEvents((prevEvents) =>
                   prevEvents.map((event) =>
                     event.id === originalEvent.id
@@ -229,34 +211,28 @@ const CalendarioMainContent = ({ isNavbarVisible }) => {
                   )
                 );
 
-                // Optional: Show success message
                 setAlertMessage('Evento atualizado com sucesso');
                 setAlertSeverity('success');
                 setAlertOpen(true);
               } catch (error) {
                 console.error('Erro ao mover evento:', error);
 
-                // Revert the event to its original position
                 if (calendarRef.current) {
                   const calendarApi = calendarRef.current.getApi();
 
-                  // Remove the new (incorrect) event
                   const eventToRemove = calendarApi.getEventById(dropInfo.event.id);
                   if (eventToRemove) {
                     eventToRemove.remove();
                   }
 
-                  // Add back the original event
                   calendarApi.addEvent(dropInfo.oldEvent.toPlainObject());
                 }
 
-                // Show error message
                 setAlertMessage('Erro ao atualizar evento');
                 setAlertSeverity('error');
                 setAlertOpen(true);
               }
             }}
-            // Handle trash icon deletion
             eventDragStop={(arg) => {
               if (isOverTrash(arg)) {
                 handleDeleteEvent(arg.event);

@@ -14,7 +14,6 @@ import {
 import { userService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
-// Image compression utility
 const compressImage = async (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -27,7 +26,6 @@ const compressImage = async (file, maxWidth = 800, maxHeight = 800, quality = 0.
         let width = img.width;
         let height = img.height;
 
-        // Calculate new dimensions while maintaining aspect ratio
         if (width > height) {
           if (width > maxWidth) {
             height *= maxWidth / width;
@@ -46,7 +44,6 @@ const compressImage = async (file, maxWidth = 800, maxHeight = 800, quality = 0.
         const ctx = canvas.getContext('2d');
         ctx.drawImage(img, 0, 0, width, height);
 
-        // Convert to base64 with specified quality
         const compressedImage = canvas.toDataURL('image/jpeg', quality);
         resolve(compressedImage);
       };
@@ -86,7 +83,6 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
           imagem: userData.imagem || '',
         });
 
-        // Set image if exists in user data
         if (userData.imagem) {
           setImage(userData.imagem);
         }
@@ -105,16 +101,13 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
     const file = event.target.files[0];
     if (file) {
       try {
-        // Validate file size
         if (file.size > 5 * 1024 * 1024) {
-          // 5MB limit
           setSnackbarMessage('Arquivo muito grande. Máximo de 5MB.');
           setSnackbarSeverity('error');
           setSnackbarOpen(true);
           return;
         }
 
-        // Compress the image
         const compressedImage = await compressImage(file);
         setImage(compressedImage);
       } catch (err) {
@@ -132,19 +125,15 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
   };
 
   const handleSave = async () => {
-    // Clear previous messages
     setSnackbarMessage('');
 
-    // Validate inputs
     if (!formData.nome || !formData.email) {
-      // Ensure email is validated
       setSnackbarMessage('Nome e Email são obrigatórios');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
       return;
     }
 
-    // Check password match if senha is provided
     if (formData.senha && formData.senha !== formData.confirmarSenha) {
       setSnackbarMessage('As senhas não coincidem');
       setSnackbarSeverity('error');
@@ -153,20 +142,17 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
     }
 
     try {
-      // Prepare data for update
       const updateData = {
         nome: formData.nome,
-        email: formData.email, // Include email in the update
+        email: formData.email,
         ...(formData.senha && { senha: formData.senha }),
-        ...(image && { imagem: image }), // Only send image if it exists
+        ...(image && { imagem: image }),
       };
 
-      // Call update service
       const response = await userService.updateUser(updateData);
       setSnackbarMessage('Perfil atualizado com sucesso!');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
-      // Handle the response...
     } catch (err) {
       console.error('Erro ao atualizar perfil:', err);
       setSnackbarMessage(err.message || 'Erro ao atualizar perfil');
@@ -177,25 +163,21 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
 
   const handleRemoveImage = async () => {
     try {
-      // Call update service to remove image
       const updateData = {
         nome: formData.nome,
         email: formData.email,
-        imagem: '', // Send empty string to remove image
+        imagem: '',
       };
 
       const response = await userService.updateUser(updateData);
 
-      // Clear image state
       setImage('');
 
-      // Update form data
       setFormData((prevData) => ({
         ...prevData,
         imagem: '',
       }));
 
-      // Reset file input
       if (inputRef.current) {
         inputRef.current.value = '';
       }
@@ -206,7 +188,6 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
     } catch (err) {
       console.error('Erro ao remover imagem:', err);
 
-      // More detailed error logging
       const errorMessage = err.response?.data?.error || err.message || 'Erro ao remover imagem';
 
       setSnackbarMessage(errorMessage);
@@ -220,7 +201,6 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
   };
 
   const handleDeleteAccount = async () => {
-    // Validate delete confirmation
     if (deleteConfirmation.toLowerCase() !== 'excluir') {
       setSnackbarMessage('Por favor, digite "EXCLUIR" para confirmar');
       setSnackbarSeverity('error');
@@ -231,28 +211,23 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
     try {
       const response = await userService.deleteUser();
 
-      // Use the provided setIsAuthenticated or fallback to a no-op
       if (typeof setIsAuthenticated === 'function') {
         setIsAuthenticated(false);
       }
 
-      // Clear local storage
       localStorage.removeItem('userName');
       localStorage.removeItem('image');
       localStorage.removeItem('formData');
       localStorage.removeItem('auth_token');
 
-      // Show success message
       setSnackbarMessage(response.data?.message || 'Conta excluída com sucesso');
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
 
-      // Redirect to login page
       navigate('/login');
     } catch (error) {
       console.error('Erro ao excluir conta:', error);
 
-      // More detailed error handling
       const errorMessage =
         error.response?.data?.details ||
         error.response?.data?.error ||
@@ -263,7 +238,6 @@ const ConfiguraçõesMainContent = ({ isNavbarVisible, setIsAuthenticated = () =
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     } finally {
-      // Close the dialog
       setDeleteDialogOpen(false);
     }
   };

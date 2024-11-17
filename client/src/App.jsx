@@ -12,7 +12,7 @@ import Modal from './components/Modal.jsx';
 import Select from 'react-select';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleXmark } from '@fortawesome/free-solid-svg-icons';
-import { userService } from './services/api'; // Import the userService
+import { userService } from './services/api';
 import { Alert, Snackbar } from '@mui/material';
 
 export const ModalContext = createContext();
@@ -33,7 +33,6 @@ export default function App() {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [userRole, setUserRole] = useState(() => {
-    // Initialize from localStorage or default
     return localStorage.getItem('userRole') || 'Usuário';
   });
 
@@ -41,22 +40,18 @@ export default function App() {
     const fetchUserRole = async () => {
       try {
         const userData = await userService.getCurrentUser();
-        console.log('App - Full User Data:', userData);
-        console.log('App - User Role:', userData.cargo);
 
-        // Update both state and localStorage
         const normalizedRole = userData.cargo || 'Usuário';
         setUserRole(normalizedRole);
         localStorage.setItem('userRole', normalizedRole);
       } catch (error) {
         console.error('App - Error fetching user role:', error);
-        // Reset role if fetch fails
+
         setUserRole('Usuário');
         localStorage.removeItem('userRole');
       }
     };
 
-    // Only fetch if authenticated
     if (isAuthenticated) {
       fetchUserRole();
     }
@@ -65,23 +60,19 @@ export default function App() {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // Check if the current path is not login or cadastro
         if (window.location.pathname === '/login' || window.location.pathname === '/cadastro') {
-          return; // Skip fetching users
+          return;
         }
 
-        // First, get the current user
         const currentUser = await userService.getCurrentUser();
 
-        // Then fetch all users
         const users = await userService.getAllUsers();
 
-        // Transform users to match react-select format, excluding current user
         const formattedUserList = users
-          .filter((user) => user.id !== currentUser.id) // Exclude current user
+          .filter((user) => user.id !== currentUser.id)
           .map((user) => ({
             value: user.id,
-            label: user.nome, // or user.email, depending on what you want to display
+            label: user.nome,
           }));
 
         setUserList(formattedUserList);
@@ -101,7 +92,6 @@ export default function App() {
     localStorage.setItem('current_theme', theme);
   }, [theme]);
 
-  // Authentication check
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -129,7 +119,6 @@ export default function App() {
     checkAuth();
   }, []);
 
-  // Private Route Component
   const PrivateRoute = ({ children }) => {
     if (isLoading) {
       return <div>Carregando...</div>;
@@ -139,7 +128,6 @@ export default function App() {
   };
 
   const handleCreateManager = async () => {
-    // Validate inputs
     if (!selectedOption) {
       setSnackbarMessage('Por favor, selecione um usuário');
       setSnackbarSeverity('error');
@@ -148,11 +136,9 @@ export default function App() {
     }
 
     try {
-      // Clear previous messages
       setError('');
       setSuccess('');
 
-      // Ensure the role is exactly as expected by the server
       const roleMapping = {
         usuario: 'Usuário',
         gerente: 'Gerente',
@@ -167,15 +153,12 @@ export default function App() {
       };
 
       try {
-        // Call API to update user role
         const response = await userService.updateUserRole(payload);
 
-        // Validate response structure
         if (!response || !response.message) {
           throw new Error('Resposta inválida do servidor');
         }
 
-        // Show success snackbar
         setSnackbarMessage(
           `Cargo do usuário atualizado de ${response.previousRole || 'Não especificado'} para ${
             response.newRole
@@ -184,30 +167,24 @@ export default function App() {
         setSnackbarSeverity('success');
         setSnackbarOpen(true);
 
-        // Update the local user list to reflect the change
         const updatedUserList = userList.map((user) =>
           user.value === selectedOption.value ? { ...user, role: formattedRole } : user
         );
         setUserList(updatedUserList);
 
-        // Close modal and reset selections
         setOpenModal(false);
         setSelectedOption(null);
         setSelectedRole('Usuário');
       } catch (apiError) {
-        // More detailed API error handling
         console.error('Erro detalhado na API:', apiError);
 
-        // Check if it's an axios error with response
         const errorMessage =
           apiError.response?.data?.error || apiError.message || 'Erro ao atualizar cargo do usuário';
 
-        // Show error snackbar
         setSnackbarMessage(errorMessage);
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
 
-        // Log additional error details
         if (apiError.response) {
           console.error('Error Response:', {
             data: apiError.response.data,
@@ -217,20 +194,33 @@ export default function App() {
         }
       }
     } catch (err) {
-      // Catch any unexpected errors
       console.error('Erro inesperado:', err);
 
-      // More detailed error handling
       const errorMessage =
         err.error ||
         (typeof err === 'object' && err.allowedRoles
           ? `Cargo inválido. Opções válidas: ${err.allowedRoles.join(', ')}`
           : 'Erro ao atualizar cargo do usuário');
 
-      // Show error snackbar
       setSnackbarMessage(errorMessage);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
+    }
+
+    try {
+      const currentUser = await userService.getCurrentUser();
+      const users = await userService.getAllUsers();
+
+      const formattedUserList = users
+        .filter((user) => user.id !== currentUser.id)
+        .map((user) => ({
+          value: user.id,
+          label: user.nome,
+        }));
+
+      setUserList(formattedUserList);
+    } catch (error) {
+      console.error('Erro ao atualizar lista de usuários', error);
     }
   };
 
@@ -384,10 +374,10 @@ export default function App() {
           anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
           sx={{
             '& .MuiSnackbar-root': {
-              zIndex: 10000, // Very high z-index
+              zIndex: 10000,
             },
             '& .MuiAlert-root': {
-              zIndex: 10001, // Slightly higher than the Snackbar container
+              zIndex: 10001,
             },
           }}
         >
@@ -396,7 +386,7 @@ export default function App() {
             severity={snackbarSeverity}
             sx={{
               width: '100%',
-              zIndex: 10001, // Ensure the alert is above everything
+              zIndex: 10001,
               position: 'relative',
             }}
           >

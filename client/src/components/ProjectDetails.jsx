@@ -48,7 +48,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
 
   const handleDeleteConfirm = async () => {
     try {
-      await sprintService.deletarDaily(dailyToDelete); // Call the API to delete the daily
+      await sprintService.deletarDaily(dailyToDelete);
       const updatedDailies = state.dailies.filter((daily) => daily.id !== dailyToDelete);
       setState((prevState) => ({ ...prevState, dailies: updatedDailies }));
       setOpenDeleteModal(false);
@@ -65,7 +65,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
     const fetchProjectData = async () => {
       if (project && project.id) {
         try {
-          // Fetch sprints and dailies from the database
           const storedSprints = await projectService.getSprintsByProjectId(project.id);
           const storedDailies = await projectService.getDailiesByProjectId(project.id);
 
@@ -73,7 +72,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
             ...prevState,
             sprints: storedSprints,
             dailies: storedDailies,
-            // Select the first sprint if available, otherwise set to empty string
             selectedSprint: storedSprints.length > 0 ? storedSprints[0].id.toString() : '',
           }));
         } catch (error) {
@@ -119,9 +117,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
         deliveryDate: state.deliveryDate,
       });
 
-      // Update the state immediately
       setState((prevState) => {
-        // Create a new array of sprints with the new sprint
         const updatedSprints = [...prevState.sprints, newSprint.sprint];
 
         return {
@@ -130,7 +126,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
           sprintName: '',
           deliveryDate: '',
           openSprintModal: false,
-          // Automatically select the newly created sprint
           selectedSprint: newSprint.sprint.id.toString(),
         };
       });
@@ -156,7 +151,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
 
       setState((prevState) => ({
         ...prevState,
-        dailies: [...prevState.dailies, newDaily.daily], // Use newDaily.daily to get the created daily
+        dailies: [...prevState.dailies, newDaily.daily],
         dailyName: '',
         description: '',
         dailyDeliveryDate: '',
@@ -199,7 +194,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
       const members = getProjectMembers(project.projectMembers);
 
       members.forEach((member) => {
-        colors[member] = `#${Math.floor(Math.random() * 16777215).toString(16)}`; // Generate random color
+        colors[member] = `#${Math.floor(Math.random() * 16777215).toString(16)}`;
       });
 
       setState((prevState) => ({ ...prevState, avatarColors: colors }));
@@ -214,10 +209,8 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
     const { draggedDailyId, dailies } = state;
 
     try {
-      // Update the daily tag in the database
       await sprintService.atualizarDailyTag(draggedDailyId, newTag);
 
-      // Update the local state
       const updatedDailies = dailies.map((daily) =>
         daily.id === draggedDailyId ? { ...daily, tag: newTag } : daily
       );
@@ -253,10 +246,8 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
     };
 
     try {
-      // Save ended sprint to the database
       await sprintService.finalizarSprint(endedSprint);
 
-      // Update local state
       const updatedEndedSprints = [...state.endedSprints, endedSprint];
       const updatedSprints = sprints.filter((sprint) => sprint.id !== parseInt(selectedSprint));
       const updatedDailies = dailies.filter((daily) => daily.sprintId !== parseInt(selectedSprint));
@@ -282,7 +273,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
     }));
   };
 
-  // Function to generate avatar text
   const generateAvatarText = (userName) => {
     return userName && userName.trim() !== ''
       ? userName
@@ -296,7 +286,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
       : '';
   };
 
-  // Fetch user images when project members change
   useEffect(() => {
     const fetchUserImages = async () => {
       if (project && project.projectMembers) {
@@ -306,16 +295,14 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
 
         const images = {};
 
-        // Use Promise.all for concurrent fetching
         await Promise.all(
           members.map(async (member) => {
             try {
-              // Try multiple variations of the name
               const nameVariations = [
                 member,
                 member.toLowerCase(),
                 member.toUpperCase(),
-                member.split(' ')[0], // First name
+                member.split(' ')[0],
                 member.split(' ')[0].toLowerCase(),
                 member.split(' ')[0].toUpperCase(),
               ];
@@ -325,13 +312,11 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
                   const userData = await userService.getUserByName(name);
 
                   if (userData.imagem) {
-                    // Ensure the image is a valid base64 or URL
                     if (
                       userData.imagem.startsWith('data:image') ||
                       userData.imagem.startsWith('http') ||
-                      userData.imagem.startsWith('/9j/') // Common base64 start
+                      userData.imagem.startsWith('/9j/')
                     ) {
-                      // Prepend data:image/jpeg;base64, if not already present
                       const formattedImage = userData.imagem.startsWith('data:image')
                         ? userData.imagem
                         : `data:image/jpeg;base64,${userData.imagem}`;
@@ -340,7 +325,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
                     } else {
                       console.warn(`Invalid image format for ${member}`);
                     }
-                    break; // Stop searching if image is found
+                    break;
                   }
                 } catch (searchError) {
                   console.log(`No user found for name variation: ${name}`);
@@ -383,7 +368,6 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
         >
           <AvatarGroup max={4}>
             {getProjectMembers(project.projectMembers).map((member, index) => {
-              // Trim the member name to handle potential whitespace
               const trimmedMember = member.trim();
               const userImage = state.userImages[trimmedMember];
 
@@ -397,7 +381,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
                   imgProps={{
                     onError: (e) => {
                       console.error(`Error loading image for ${trimmedMember}:`, e);
-                      e.target.src = ''; // Fallback to initials
+                      e.target.src = '';
                     },
                   }}
                 />
@@ -633,10 +617,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
         disabled={state.sprints.length === 1}
       >
         {state.sprints.map((sprint) => (
-          <option
-            key={`sprint-${sprint.id}`} // Ensure unique key
-            value={sprint.id}
-          >
+          <option key={`sprint-${sprint.id}`} value={sprint.id}>
             {sprint.name}
           </option>
         ))}
@@ -671,7 +652,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
           >
             {state.pendingDailies.map((daily) => (
               <div
-                key={`pending-daily-${daily.id}`} // Unique key
+                key={`pending-daily-${daily.id}`}
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}
@@ -693,7 +674,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
           >
             {state.inProgressDailies.map((daily) => (
               <div
-                key={`in-progress-daily-${daily.id}`} // Unique key
+                key={`in-progress-daily-${daily.id}`}
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}
@@ -715,7 +696,7 @@ const ProjectDetails = ({ isNavbarVisible, project, userRole }) => {
           >
             {state.completedDailies.map((daily) => (
               <div
-                key={`completed-daily-${daily.id}`} // Unique key
+                key={`completed-daily-${daily.id}`}
                 className='daily-card'
                 draggable
                 onDragStart={() => handleDragStart(daily.id)}

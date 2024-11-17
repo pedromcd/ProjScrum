@@ -14,16 +14,9 @@ import '../assets/styles/Navbar.css';
 import { ModalContext } from '../App';
 import { userService } from '../services/api';
 
-const Navbar = ({
-  theme,
-  setTheme,
-  isVisible,
-  setIsAuthenticated = () => {}, // Default no-op function
-  userRole,
-}) => {
+const Navbar = ({ theme, setTheme, isVisible, setIsAuthenticated = () => {}, userRole }) => {
   const { setOpenModal } = useContext(ModalContext);
   const navigate = useNavigate();
-  console.log('Navbar - Received userRole:', userRole);
 
   const toggle_mode = () => {
     theme == 'light' ? setTheme('dark') : setTheme('light');
@@ -31,22 +24,17 @@ const Navbar = ({
 
   const handleLogout = async () => {
     try {
-      // Call the logout service
       await userService.logout();
 
-      // Update authentication state
       setIsAuthenticated(false);
 
-      // Reset user role to default
-      setUserRole('Usuário'); // If you have a way to update userRole in parent component
+      setUserRole('Usuário');
 
-      // Remove any stored user data
       localStorage.removeItem('userName');
       localStorage.removeItem('image');
       localStorage.removeItem('formData');
-      localStorage.removeItem('userRole'); // Add this line
+      localStorage.removeItem('userRole');
 
-      // Redirect to login page
       navigate('/login');
     } catch (error) {
       console.error('Logout failed', error);

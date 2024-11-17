@@ -13,7 +13,6 @@ const LoginForm = ({ setIsAuthenticated }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Email validation regex
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(String(email).toLowerCase());
@@ -22,25 +21,21 @@ const LoginForm = ({ setIsAuthenticated }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Trim inputs to remove whitespace
     const trimmedEmail = email.trim();
     const trimmedSenha = senha.trim();
 
-    // Comprehensive validation
     if (!trimmedEmail) {
       setError('Por favor, preencha o email');
       setSnackbarOpen(true);
       return;
     }
 
-    // Validate email format
     if (!validateEmail(trimmedEmail)) {
       setError('Por favor, insira um email válido');
       setSnackbarOpen(true);
       return;
     }
 
-    // Validate password
     if (!trimmedSenha) {
       setError('Por favor, preencha a senha');
       setSnackbarOpen(true);
@@ -50,7 +45,6 @@ const LoginForm = ({ setIsAuthenticated }) => {
     setLoading(true);
 
     try {
-      // Call login API with credentials and remember me preference
       const loginData = {
         email: trimmedEmail,
         senha: trimmedSenha,
@@ -59,7 +53,6 @@ const LoginForm = ({ setIsAuthenticated }) => {
 
       await userService.login(loginData);
 
-      // Persist remember me preference
       if (rememberMe) {
         localStorage.setItem('rememberMe', 'true');
         localStorage.setItem('userEmail', trimmedEmail);
@@ -68,16 +61,12 @@ const LoginForm = ({ setIsAuthenticated }) => {
         localStorage.removeItem('userEmail');
       }
 
-      // Set authentication to true
       setIsAuthenticated(true);
 
-      // Clear any previous errors
       setError('');
 
-      // Redirect to home page or dashboard
       navigate('/');
     } catch (err) {
-      // Handle login errors
       const errorMessage =
         err.error || err.message || 'Erro ao fazer login: E-mail ou senha incorretos. Tente novamente.';
 
@@ -88,7 +77,6 @@ const LoginForm = ({ setIsAuthenticated }) => {
     }
   };
 
-  // On component mount, check if user was remembered
   React.useEffect(() => {
     const rememberedEmail = localStorage.getItem('userEmail');
     const isRemembered = localStorage.getItem('rememberMe') === 'true';

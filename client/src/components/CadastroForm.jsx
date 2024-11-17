@@ -13,15 +13,12 @@ const CadastroForm = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const navigate = useNavigate();
 
-  // Email validation regex
   const validateEmail = (email) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(String(email).toLowerCase());
   };
 
-  // Password strength validation
   const validatePassword = (password) => {
-    // At least 8 characters, one uppercase, one lowercase, one number
     const re = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/;
     return re.test(password);
   };
@@ -29,25 +26,21 @@ const CadastroForm = () => {
   const handleCadastro = async (e) => {
     e.preventDefault();
 
-    // Trim inputs to remove whitespace
     const trimmedNome = nome.trim();
     const trimmedEmail = email.trim();
 
-    // Comprehensive validation
     if (!trimmedNome) {
       setError('Por favor, preencha o nome completo');
       setSnackbarOpen(true);
       return;
     }
 
-    // Check name length and format
     if (trimmedNome.length < 3) {
       setError('Nome deve ter pelo menos 3 caracteres');
       setSnackbarOpen(true);
       return;
     }
 
-    // Validate email
     if (!trimmedEmail) {
       setError('Por favor, preencha o email');
       setSnackbarOpen(true);
@@ -60,7 +53,6 @@ const CadastroForm = () => {
       return;
     }
 
-    // Validate password
     if (!senha) {
       setError('Por favor, preencha a senha');
       setSnackbarOpen(true);
@@ -73,7 +65,6 @@ const CadastroForm = () => {
       return;
     }
 
-    // Check password confirmation
     if (!confirmarSenha) {
       setError('Por favor, confirme a senha');
       setSnackbarOpen(true);
@@ -87,20 +78,16 @@ const CadastroForm = () => {
     }
 
     try {
-      // Send the request to the correct endpoint
       await userService.register({
         nome: trimmedNome,
         email: trimmedEmail,
         senha,
       });
 
-      // Clear any previous errors
       setError('');
 
-      // Redirect to login page
       navigate('/login');
     } catch (err) {
-      // Handle registration errors
       const errorMessage = err.message || 'Erro ao cadastrar usuário';
       setError(errorMessage);
       setSnackbarOpen(true);

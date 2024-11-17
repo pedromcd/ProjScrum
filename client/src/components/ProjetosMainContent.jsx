@@ -44,14 +44,11 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
       try {
         setIsLoading(true);
 
-        // First, log the current user information
         const userData = await userService.getCurrentUser();
         setUserRole(userData.cargo || 'Usuário');
 
-        // Then fetch projects and log detailed information
         const projects = await projectService.getProjetos();
 
-        // Ensure projects are set even if the array is empty
         setProjectCards(projects || []);
       } catch (error) {
         console.error('Erro detalhado ao carregar projetos:', {
@@ -74,15 +71,12 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        // First, get the current user
         const currentUser = await userService.getCurrentUser();
 
-        // Then fetch all users
         const users = await userService.getAllUsers();
 
-        // Filter out the current user from the options
         const formattedUserOptions = users
-          .filter((user) => user.id !== currentUser.id) // Exclude current user
+          .filter((user) => user.id !== currentUser.id)
           .map((user) => ({
             value: user.id,
             label: user.nome,
@@ -107,16 +101,10 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     try {
       setIsCreating(true);
 
-      // Get the current user's ID
       const currentUser = await userService.getCurrentUser();
 
-      // Ensure the current user is in the project members
-      const projectMembersWithCurrentUser = [
-        ...projectMembers.map((member) => member.value),
-        currentUser.id, // Add current user's ID
-      ];
+      const projectMembersWithCurrentUser = [...projectMembers.map((member) => member.value), currentUser.id];
 
-      // Remove duplicates
       const uniqueProjectMembers = [...new Set(projectMembersWithCurrentUser)];
 
       const newProject = await projectService.criarProjeto({
@@ -126,16 +114,13 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
         projectMembers: uniqueProjectMembers,
       });
 
-      // Update project cards
       setProjectCards((prev) => [...prev, newProject.project]);
 
-      // Reset form
       setProjectName('');
       setProjectDesc('');
       setDeliveryDate('');
       setProjectMembers([]);
 
-      // Close modal
       setOpenModal(false);
     } catch (error) {
       console.error('Erro ao criar projeto', error);
@@ -169,16 +154,13 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
     try {
       await projectService.deletarProjeto(selectedCard);
 
-      // Remove the deleted project from the list
       const newProjectCards = projectCards.filter((project) => project.id !== selectedCard);
       setProjectCards(newProjectCards);
 
-      // Close modals and reset states
       setOpenDeleteModal(false);
       setDeleteMode(false);
       setSelectedCard(null);
 
-      // Show a success message
       setAlertMessage('Projeto deletado com sucesso');
       setAlertSeverity('success');
       setAlertOpen(true);
@@ -187,7 +169,6 @@ const ProjetosMainContent = ({ isNavbarVisible }) => {
 
       const errorMessage = error.response?.data?.error || error.error || 'Erro ao deletar projeto';
 
-      // Show a more informative error message
       setAlertMessage(`Erro ao deletar projeto: ${errorMessage}`);
       setAlertSeverity('error');
       setAlertOpen(true);

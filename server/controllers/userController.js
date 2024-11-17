@@ -3,12 +3,10 @@ import bcrypt from 'bcrypt';
 import { conexao } from '../config/database.js';
 import { generateToken, setCookieToken } from '../utils/tokenUtils.js';
 
-// user
 export const cadastrarUser = async (req, res) => {
   const { nome, email, senha } = req.body;
 
   try {
-    // Check if user already exists
     const checkUserQuery = 'SELECT * FROM usuarios WHERE email = ?';
     const existingUsers = await conexao.execute({
       sql: checkUserQuery,
@@ -19,11 +17,9 @@ export const cadastrarUser = async (req, res) => {
       return res.status(400).json({ error: 'Usuário já cadastrado' });
     }
 
-    // Hash the password
     const saltRounds = 10;
     const hashedPassword = await bcrypt.hash(senha, saltRounds);
 
-    // Insert new user
     const insertUserQuery = 'INSERT INTO usuarios (nome, email, senha) VALUES (?, ?, ?)';
     await conexao.execute({
       sql: insertUserQuery,
@@ -60,13 +56,12 @@ export const logar = async (req, res) => {
 
     const token = generateToken(user);
 
-    // Set cookie options
     const cookieOptions = {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
       path: '/',
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 24 * 60 * 60 * 1000,
     };
 
     res.cookie('auth_token', token, cookieOptions);
@@ -85,7 +80,6 @@ export const logar = async (req, res) => {
 
 export const logout = (req, res) => {
   try {
-    // Clear the authentication cookie
     res.clearCookie('auth_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -146,10 +140,9 @@ export const updateUser = async (req, res) => {
       params.push(hashedPassword);
     }
 
-    // Explicitly handle image removal or update
     if (imagem !== undefined) {
       query += ', imagem = ?';
-      params.push(imagem || null); // Use null to clear the image
+      params.push(imagem || null);
     }
 
     query += ' WHERE id = ?';
@@ -196,7 +189,6 @@ export const updateUserRole = async (req, res) => {
   const { userId, role } = req.body;
 
   try {
-    // Validate input with more specific checks
     if (!userId) {
       console.error('User ID is missing');
       return res.status(400).json({ error: 'ID do usuário é obrigatório' });
@@ -207,7 +199,6 @@ export const updateUserRole = async (req, res) => {
       return res.status(400).json({ error: 'Cargo é obrigatório' });
     }
 
-    // Validate role against allowed values (case-sensitive)
     const allowedRoles = ['Usuário', 'Gerente', 'Admin'];
     if (!allowedRoles.includes(role)) {
       console.error('Invalid role provided:', role);
@@ -217,7 +208,6 @@ export const updateUserRole = async (req, res) => {
       });
     }
 
-    // Check if user exists
     const checkUserQuery = 'SELECT * FROM usuarios WHERE id = ?';
     const userResult = await conexao.execute({
       sql: checkUserQuery,
@@ -229,24 +219,20 @@ export const updateUserRole = async (req, res) => {
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Get the current role before updating
     const currentRole = userResult.rows[0].cargo;
 
-    // Update user role
     const updateQuery = 'UPDATE usuarios SET cargo = ? WHERE id = ?';
     const updateResult = await conexao.execute({
       sql: updateQuery,
       args: [role, userId],
     });
 
-    // Verify the update
     const verifyQuery = 'SELECT cargo FROM usuarios WHERE id = ?';
     const verifyResult = await conexao.execute({
       sql: verifyQuery,
       args: [userId],
     });
 
-    // Check if the role was actually updated
     if (verifyResult.rows[0]?.cargo !== role) {
       console.error('Role update failed', {
         expectedRole: role,
@@ -273,21 +259,18 @@ export const updateUserRole = async (req, res) => {
   }
 };
 
-// projetos
 export const getProjetos = async (req, res) => {
   try {
     const userId = req.user.id;
-    const userRole = req.user.cargo; // Assuming you're passing user role in the token
+    const userRole = req.user.cargo;
 
     let selectProj;
     let queryArgs;
 
     if (userRole === 'Admin') {
-      // If user is an Admin, fetch all projects
       selectProj = 'SELECT * FROM projetos';
       queryArgs = [];
     } else {
-      // For non-admin users, fetch only projects they're part of
       selectProj = `
         SELECT DISTINCT p.* 
         FROM projetos p
@@ -311,9 +294,8 @@ export const getProjetos = async (req, res) => {
 
 export const criarProjeto = async (req, res) => {
   const { projectName, projectDesc, deliveryDate, projectMembers } = req.body;
-  const userId = req.user.id; // Assuming your token payload uses 'id'
+  const userId = req.user.id;
 
-  // Validate input
   if (!projectName) {
     return res.status(400).json({ error: 'Nome do projeto é obrigatório' });
   }
@@ -325,7 +307,6 @@ export const criarProjeto = async (req, res) => {
   const transaction = await conexao.transaction();
 
   try {
-    // Insert project
     const insertProjQuery = `
       INSERT INTO projetos 
       (projectName, projectDesc, deliveryDate, criado_por) 
@@ -347,20 +328,16 @@ export const criarProjeto = async (req, res) => {
       });
     }
 
-    // Convert BigInt to Number safely
     const projectId = Number(projectResult.lastInsertRowid);
 
-    // Ensure the project creator is in the project members
     const uniqueMembers = Array.from(new Set([...projectMembers, userId]));
 
-    // Add project members
     if (uniqueMembers && uniqueMembers.length > 0) {
       const membersQuery = `
         INSERT INTO projeto_usuarios (projectId, userId) 
         VALUES ${uniqueMembers.map(() => '(?, ?)').join(', ')}
       `;
 
-      // Flatten the array for args
       const membersArgs = uniqueMembers.flatMap((memberId) => [projectId, memberId]);
 
       try {
@@ -378,17 +355,14 @@ export const criarProjeto = async (req, res) => {
       }
     }
 
-    // Commit the transaction
     await transaction.commit();
 
-    // Custom JSON serializer to handle BigInt
     const safeStringify = (obj) => {
       return JSON.parse(
         JSON.stringify(obj, (key, value) => (typeof value === 'bigint' ? value.toString() : value))
       );
     };
 
-    // Fetch the created project to return full details
     const getProjectQuery = `
       SELECT p.*, 
              GROUP_CONCAT(pu.userId) AS memberIds 
@@ -407,10 +381,8 @@ export const criarProjeto = async (req, res) => {
       projectDetails = projectDetailsResult.rows[0];
     } catch (fetchError) {
       console.error('Error fetching project details:', fetchError);
-      // Not a critical error, so we'll still return the project creation success
     }
 
-    // Safe response with converted project ID
     const responseData = {
       message: 'Projeto criado com sucesso',
       project: {
@@ -423,12 +395,10 @@ export const criarProjeto = async (req, res) => {
       },
     };
 
-    // Use the custom stringify method
     const safeResponseData = safeStringify(responseData);
 
     res.status(201).json(safeResponseData);
   } catch (error) {
-    // Rollback transaction on unexpected errors
     await transaction.rollback();
     console.error('Unexpected error during project creation:', error);
     res.status(500).json({
@@ -441,18 +411,15 @@ export const criarProjeto = async (req, res) => {
 export const deletarProjeto = async (req, res) => {
   const { projectId } = req.body;
 
-  // Validate input
   if (!projectId) {
     return res.status(400).json({ error: 'Project ID is required' });
   }
 
-  // Ensure projectId is a number
   const parsedProjectId = parseInt(projectId, 10);
   if (isNaN(parsedProjectId)) {
     return res.status(400).json({ error: 'Invalid Project ID' });
   }
 
-  // Ensure user is authenticated
   if (!req.user || !req.user.id) {
     return res.status(401).json({ error: 'User not authenticated' });
   }
@@ -461,7 +428,6 @@ export const deletarProjeto = async (req, res) => {
   const transaction = await conexao.transaction();
 
   try {
-    // Fetch detailed project and user information
     const projectQuery = `
       SELECT 
         p.id, 
@@ -482,7 +448,6 @@ export const deletarProjeto = async (req, res) => {
       args: [userId, parsedProjectId],
     });
 
-    // No project found
     if (projectResult.rows.length === 0) {
       await transaction.rollback();
       return res.status(404).json({
@@ -493,7 +458,6 @@ export const deletarProjeto = async (req, res) => {
 
     const project = projectResult.rows[0];
 
-    // Check project ownership or admin privileges
     const isProjectOwner = project.criado_por === userId;
     const isAdmin = project.current_user_role === 'Admin';
     const isManagerOrAdmin = ['Admin', 'Gerente'].includes(project.current_user_role);
@@ -514,39 +478,32 @@ export const deletarProjeto = async (req, res) => {
       });
     }
 
-    // Delete dependent records in a specific order
-    // 1. Delete dailys first (due to foreign key constraints)
     await transaction.execute({
       sql: 'DELETE FROM dailys WHERE projectId = ?',
       args: [parsedProjectId],
     });
 
-    // 2. Delete sprints
     await transaction.execute({
       sql: 'DELETE FROM sprints WHERE projectId = ?',
       args: [parsedProjectId],
     });
 
-    // 3. Delete project-user associations
     await transaction.execute({
       sql: 'DELETE FROM projeto_usuarios WHERE projectId = ?',
       args: [parsedProjectId],
     });
 
-    // 4. Delete finalized sprints
     await transaction.execute({
       sql: 'DELETE FROM sprintsfinalizadas WHERE projectId = ?',
       args: [parsedProjectId],
     });
 
-    // 5. Finally, delete the project itself
     const deleteProjectQuery = 'DELETE FROM projetos WHERE id = ?';
     const deleteResult = await transaction.execute({
       sql: deleteProjectQuery,
       args: [parsedProjectId],
     });
 
-    // Commit the transaction
     await transaction.commit();
 
     return res.status(200).json({
@@ -554,7 +511,6 @@ export const deletarProjeto = async (req, res) => {
       deletedProjectId: parsedProjectId,
     });
   } catch (error) {
-    // Rollback the transaction in case of any error
     await transaction.rollback();
 
     console.error('Erro ao deletar projeto:', error);
@@ -567,12 +523,11 @@ export const deletarProjeto = async (req, res) => {
 
 export const finalizeDaily = async (req, res) => {
   const { dailyId } = req.params;
-  const userId = req.user.id; // Assuming the user ID is available from the token
+  const userId = req.user.id;
 
-  const transaction = await conexao.transaction(); // Start a transaction
+  const transaction = await conexao.transaction();
 
   try {
-    // Step 1: Retrieve the daily to be finalized
     const getDailyQuery = 'SELECT * FROM dailys WHERE id = ?';
     const dailyResult = await transaction.execute({
       sql: getDailyQuery,
@@ -586,7 +541,6 @@ export const finalizeDaily = async (req, res) => {
 
     const daily = dailyResult.rows[0];
 
-    // Step 2: Insert into dailys_finalizadas
     const insertQuery = `
       INSERT INTO dailys_finalizadas 
       (projectId, sprintId, name, description, deliveryDate, tag, finalizado_por) 
@@ -601,19 +555,17 @@ export const finalizeDaily = async (req, res) => {
         daily.name,
         daily.description,
         daily.deliveryDate,
-        daily.tag || 'Concluido', // Default to 'Concluido' if no tag
+        daily.tag || 'Concluido',
         userId,
       ],
     });
 
-    // Step 3: Delete from dailys
     const deleteQuery = 'DELETE FROM dailys WHERE id = ?';
     const deleteResult = await transaction.execute({
       sql: deleteQuery,
       args: [dailyId],
     });
 
-    // Commit the transaction
     await transaction.commit();
 
     res.status(200).json({
@@ -621,7 +573,6 @@ export const finalizeDaily = async (req, res) => {
       deletedDailyId: dailyId,
     });
   } catch (error) {
-    // Rollback the transaction in case of any error
     await transaction.rollback();
 
     console.error('Erro ao finalizar daily:', error);
@@ -635,18 +586,15 @@ export const finalizeDaily = async (req, res) => {
 export const deleteUser = async (req, res) => {
   const userId = req.user.id;
 
-  // Start a transaction
   const db = conexao;
   const transaction = await db.transaction();
 
   try {
-    // 1. Delete user's project memberships
     await transaction.execute({
       sql: 'DELETE FROM projeto_usuarios WHERE userId = ?',
       args: [userId],
     });
 
-    // 2. Find projects created by the user
     const projectsResult = await transaction.execute({
       sql: 'SELECT id FROM projetos WHERE criado_por = ?',
       args: [userId],
@@ -655,41 +603,34 @@ export const deleteUser = async (req, res) => {
     const projectIds = projectsResult.rows.map((row) => row.id);
 
     if (projectIds.length > 0) {
-      // 3. Delete project-related entries
       const projectPlaceholders = projectIds.map(() => '?').join(',');
 
-      // Delete project members
       await transaction.execute({
         sql: `DELETE FROM projeto_usuarios WHERE projectId IN (${projectPlaceholders})`,
         args: projectIds,
       });
 
-      // Delete dailys
       await transaction.execute({
         sql: `DELETE FROM dailys WHERE projectId IN (${projectPlaceholders})`,
         args: projectIds,
       });
 
-      // Delete sprints
       await transaction.execute({
         sql: `DELETE FROM sprints WHERE projectId IN (${projectPlaceholders})`,
         args: projectIds,
       });
 
-      // Delete finalized sprints
       await transaction.execute({
         sql: `DELETE FROM sprintsfinalizadas WHERE projectId IN (${projectPlaceholders})`,
         args: projectIds,
       });
 
-      // Delete projects
       await transaction.execute({
         sql: 'DELETE FROM projetos WHERE criado_por = ?',
         args: [userId],
       });
     }
 
-    // 4. Delete user's personal entries
     await transaction.execute({
       sql: 'DELETE FROM dailys WHERE criado_por = ?',
       args: [userId],
@@ -705,22 +646,18 @@ export const deleteUser = async (req, res) => {
       args: [userId],
     });
 
-    // 5. Finally, delete the user
     const deleteUserResult = await transaction.execute({
       sql: 'DELETE FROM usuarios WHERE id = ?',
       args: [userId],
     });
 
-    // Verify deletion
     if (deleteUserResult.rowsAffected === 0) {
       await transaction.rollback();
       return res.status(404).json({ error: 'Usuário não encontrado' });
     }
 
-    // Commit the transaction
     await transaction.commit();
 
-    // Clear authentication cookie
     res.clearCookie('auth_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -730,7 +667,6 @@ export const deleteUser = async (req, res) => {
 
     res.status(200).json({ message: 'Conta excluída com sucesso' });
   } catch (error) {
-    // Rollback the transaction
     await transaction.rollback();
 
     console.error('Erro detalhado ao excluir conta:', {
@@ -775,13 +711,11 @@ export const getProjectById = async (req, res) => {
   }
 };
 
-// calendario
 export const createEvent = async (req, res) => {
   const { title, start, end, description } = req.body;
   const userId = req.user.id;
 
   try {
-    // Ensure only date is stored if no specific time is provided
     const formattedStart = start.includes('T')
       ? new Date(start).toISOString()
       : new Date(start).toISOString().split('T')[0];
@@ -816,10 +750,6 @@ export const createEvent = async (req, res) => {
 };
 
 export const getAllEvents = async (req, res) => {
-  // Add logging to help diagnose the issue
-  console.log('Event Request User:', req.user);
-
-  // Validate that user is authenticated
   if (!req.user || !req.user.id) {
     return res.status(401).json({
       error: 'Usuário não autenticado',
@@ -856,7 +786,6 @@ export const updateEvent = async (req, res) => {
   const userId = req.user.id;
 
   try {
-    // Strict validation to prevent unauthorized modifications
     const existingEventQuery = 'SELECT * FROM events WHERE id = ? AND user_id = ?';
     const existingEventResult = await conexao.execute({
       sql: existingEventQuery,
@@ -869,10 +798,8 @@ export const updateEvent = async (req, res) => {
       });
     }
 
-    // Preserve original event details
     const originalEvent = existingEventResult.rows[0];
 
-    // Only allow specific fields to be updated
     const query = `
       UPDATE events 
       SET 
@@ -960,14 +887,12 @@ export const updateEventDate = async (req, res) => {
     const { newDate } = req.body;
     const userId = req.user.id;
 
-    // Validate input
     if (!eventId || !newDate) {
       return res.status(400).json({
         error: 'ID do evento e nova data são obrigatórios',
       });
     }
 
-    // Find the existing event
     const findEventQuery = 'SELECT * FROM events WHERE id = ? AND user_id = ?';
     const eventResult = await conexao.execute({
       sql: findEventQuery,
@@ -982,26 +907,18 @@ export const updateEventDate = async (req, res) => {
 
     const existingEvent = eventResult.rows[0];
 
-    // Prepare the update query - use the exact date string
     const updateQuery = 'UPDATE events SET start = ?, end = ? WHERE id = ? AND user_id = ?';
     const updateResult = await conexao.execute({
       sql: updateQuery,
-      args: [
-        newDate, // Use the exact date string
-        existingEvent.end ? newDate : null, // Preserve original end logic
-        eventId,
-        userId,
-      ],
+      args: [newDate, existingEvent.end ? newDate : null, eventId, userId],
     });
 
-    // Verify the update
     if (updateResult.rowsAffected === 0) {
       return res.status(500).json({
         error: 'Falha ao atualizar o evento',
       });
     }
 
-    // Fetch the updated event
     const updatedEventQuery = 'SELECT * FROM events WHERE id = ?';
     const updatedEventResult = await conexao.execute({
       sql: updatedEventQuery,

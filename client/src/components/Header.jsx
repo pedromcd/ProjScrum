@@ -23,20 +23,16 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
 
   useEffect(() => {
     const determinePageName = async () => {
-      // Check predefined page mappings first
       if (pageNameMapping[location.pathname]) {
         setCurrentPageName(pageNameMapping[location.pathname]);
         return;
       }
 
-      // Check if we're on a project page
       if (location.pathname.startsWith('/project/')) {
         try {
-          // Fetch project details using the project ID from URL params
           const projectId = params.projectId;
           const projectData = await projectService.getProjectById(projectId);
 
-          // Set project name from fetched data
           setCurrentPageName(projectData.projectName || 'Projeto');
         } catch (error) {
           console.error('Error fetching project name:', error);
@@ -45,7 +41,6 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
         return;
       }
 
-      // Fallback for any other routes
       setCurrentPageName('Página');
     };
 

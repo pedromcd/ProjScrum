@@ -10,11 +10,10 @@ export const verificarToken = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach the entire decoded user information to the request
     req.user = {
       id: decoded.id,
       email: decoded.email,
-      cargo: decoded.cargo, // Ensure this is being set in the token generation
+      cargo: decoded.cargo,
     };
 
     next();

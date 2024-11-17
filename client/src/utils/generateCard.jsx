@@ -1,4 +1,3 @@
-// useProjectCreation.js
 import { useState, useEffect } from 'react';
 import { v4 as uuid } from 'uuid';
 
@@ -6,7 +5,6 @@ export const formatDate = (date) => {
   const [year, month, day] = date.split('-');
   const formattedDate = new Date(Number(year), Number(month) - 1, Number(day));
 
-  // Explicitly format to DD-MM-YYYY
   const formattedDay = String(formattedDate.getDate()).padStart(2, '0');
   const formattedMonth = String(formattedDate.getMonth() + 1).padStart(2, '0');
   const formattedYear = formattedDate.getFullYear();

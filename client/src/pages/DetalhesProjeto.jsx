@@ -24,7 +24,6 @@ const DetalhesProjeto = ({
         setIsLoading(true);
         const startTime = Date.now();
 
-        // Fetch project details by ID
         const projectData = await projectService.getProjectById(projectId);
 
         const elapsedTime = Date.now() - startTime;
@@ -71,12 +70,10 @@ const DetalhesProjeto = ({
     );
   }
 
-  // Error state
   if (error) {
     return <div>Erro ao carregar projeto: {error.message}</div>;
   }
 
-  // No project found
   if (!project) {
     return <div>Projeto não encontrado</div>;
   }

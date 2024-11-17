@@ -15,7 +15,6 @@ const HistoricoMainContent = ({ isNavbarVisible }) => {
       try {
         const fetchedProjects = await projectService.getProjetos();
 
-        // Fetch ended sprints for each project
         const projectsWithEndedSprints = await Promise.all(
           fetchedProjects.map(async (project) => {
             const endedSprints = await projectService.getEndedSprintsByProjectId(project.id);

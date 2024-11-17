@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
-  withCredentials: true, // Important for sending cookies
+  withCredentials: true,
   timeout: 10000,
 });
 
@@ -26,7 +26,7 @@ export const userService = {
           rememberMe: credentials.rememberMe || false,
         },
         {
-          withCredentials: true, // Ensure cookies are sent/received
+          withCredentials: true,
         }
       );
       return response.data;
@@ -42,7 +42,6 @@ export const userService = {
     } catch (error) {
       console.error('Erro ao buscar usuário:', error.response?.data || error.message);
 
-      // If unauthorized, redirect to login
       if (error.response && error.response.status === 401) {
         window.location.href = '/login';
       }
@@ -91,14 +90,12 @@ export const userService = {
         headers: error.response?.headers,
       });
 
-      // Throw a more informative error
       throw error.response?.data || new Error('Erro ao atualizar cargo do usuário');
     }
   },
 
   getUserByName: async (name) => {
     try {
-      // Encode the name to handle special characters
       const encodedName = encodeURIComponent(name.trim());
 
       const response = await api.get(`/users/name/${encodedName}`);
@@ -166,7 +163,6 @@ export const projectService = {
         data: error.response?.data,
       });
 
-      // Throw a more informative error
       throw (
         error.response?.data || {
           error: 'Erro ao deletar projeto',
@@ -197,7 +193,6 @@ export const projectService = {
         data: error.response?.data,
       });
 
-      // Throw a more informative error
       throw (
         error.response?.data || {
           error: 'Erro ao buscar projeto',
@@ -252,7 +247,7 @@ export const sprintService = {
   criarSprint: async (sprintData) => {
     try {
       const response = await api.post('/criar-sprint', sprintData);
-      return response.data; // This should include the created sprint
+      return response.data;
     } catch (error) {
       console.error('Erro ao criar sprint:', error);
       throw error.response?.data || new Error('Erro ao criar sprint');
@@ -344,7 +339,6 @@ export const calendarService = {
         config: error.config,
       });
 
-      // Throw a more informative error
       throw (
         error.response?.data || {
           error: 'Erro ao atualizar data do evento',
@@ -356,7 +350,6 @@ export const calendarService = {
 
   deleteEvent: async (eventId) => {
     try {
-      // Ensure eventId is passed correctly
       if (!eventId) {
         throw new Error('Event ID is required');
       }
