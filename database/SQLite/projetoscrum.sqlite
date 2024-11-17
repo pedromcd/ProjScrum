@@ -72,17 +72,47 @@ CREATE TABLE dailys (
 -- -----------------------------------------------------
 -- Table `dailys_finalizadas`
 -- -----------------------------------------------------
-CREATE TABLE dailys_finalizadas (
+CREATE TABLE IF NOT EXISTS dailys_finalizadas (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   projectId INTEGER NOT NULL,
   sprintId INTEGER NOT NULL,
   name TEXT NOT NULL,
   description TEXT,
-  deliveryDate DATE NOT NULL,
-  tag TEXT CHECK (tag IN ('Pendente', 'Em progresso', 'Concluido')) NOT NULL DEFAULT 'Concluido',
-  finalizado_por INTEGER NOT NULL,  -- User who finalized the daily
+  deliveryDate TEXT NOT NULL,
+  tag TEXT CHECK(tag IN ('Pendente', 'Em progresso', 'Concluido')) DEFAULT 'Concluido',
+  finalizado_por INTEGER NOT NULL,
   data_finalizacao DATETIME DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (sprintId) REFERENCES sprints(id) ON DELETE CASCADE,
   FOREIGN KEY (projectId) REFERENCES projetos(id) ON DELETE CASCADE,
-  FOREIGN KEY (finalizado_por) REFERENCES usuarios(id)
+  FOREIGN KEY (sprintId) REFERENCES sprintsfinalizadas(id) ON DELETE CASCADE,
+  FOREIGN KEY (finalizado_por) REFERENCES usuarios(id) ON DELETE RESTRICT
+);
+
+-- -----------------------------------------------------
+-- Table `sprintsfinalizadas`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS sprintsfinalizadas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  projectId INTEGER NOT NULL,
+  name TEXT NOT NULL,
+  atividades INTEGER NOT NULL,
+  equipe INTEGER NOT NULL,
+  comunicacao INTEGER NOT NULL,
+  entregas INTEGER NOT NULL,
+  finalizado_por INTEGER NOT NULL,
+  data_finalizacao DATETIME DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (projectId) REFERENCES projetos(id) ON DELETE CASCADE,
+  FOREIGN KEY (finalizado_por) REFERENCES usuarios(id) ON DELETE RESTRICT
+);
+
+-- -----------------------------------------------------
+-- Table `events`
+-- -----------------------------------------------------
+CREATE TABLE events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  start TEXT NOT NULL,
+  end TEXT,
+  description TEXT,
+  user_id INTEGER NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
