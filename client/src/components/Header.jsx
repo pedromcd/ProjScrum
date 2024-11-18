@@ -74,10 +74,6 @@ const Header = ({ toggleNavbar, isNavbarVisible }) => {
       </ul>
 
       <div className='user-details'>
-        <span className='icon-wrapper-header'>
-          <FontAwesomeIcon icon={faBell} />
-        </span>
-
         {userImage ? (
           <Avatar className='avatar' sx={{ width: 50, height: 50 }} src={userImage} />
         ) : (

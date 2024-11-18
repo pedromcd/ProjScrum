@@ -108,7 +108,6 @@ const LoginForm = ({ setIsAuthenticated }) => {
                 />
               </li>
               <li>
-                <p className='forgot-password'>Esqueci Minha Senha</p>
                 <p>Senha</p>
                 <input
                   type='password'
