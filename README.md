@@ -1,3 +1,5 @@
+[English](README.en.md) | **Português**
+
 # ProjScrum
 
 **ProjScrum** é uma plataforma web de gerenciamento Scrum, desenvolvida com o objetivo de facilitar a implementação de metodologias ágeis em equipes de desenvolvimento de software. O sistema é construído utilizando tecnologias modernas, como **React** para a interface do usuário, **Node.js** para o backend, **MySQL** para a modelagem do banco de dados, garantindo uma estrutura robusta e eficiente para o armazenamento de dados e **SQLite** para o banco de dados remoto.
@@ -50,10 +52,8 @@ Certifique-se de que você possui os seguintes pré-requisitos instalados em sua
 Primeiro, você precisa clonar o repositório do ProjScrum. Abra um terminal e execute o seguinte comando:
 
 ```bash
-git clone https://github.com/seu-usuario/ProjScrum.git
+git clone https://github.com/pedromcd/ProjScrum.git
 ```
-
-Substitua seu-usuario pelo seu nome de usuário do GitHub.
 
 ### 2. Instale as Dependências do Cliente
 
