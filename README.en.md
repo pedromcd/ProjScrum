@@ -1,138 +1,174 @@
 **English** | [Português](README.md)
 
-# ProjScrum
+# 📋 ProjScrum
 
-**ProjScrum** is a web platform for Scrum management, built to make it easier for software development teams to adopt agile methodologies. The system uses modern technologies such as **React** for the user interface, **Node.js** for the backend, **MySQL** for database modeling, providing a robust and efficient structure for data storage, and **SQLite** for the remote database.
+**A web platform for managing projects with Scrum: projects, sprints, daily stand-ups on a kanban board, sprint reviews, and a team calendar.**
 
-## Table of Contents
+A team project for the **Applied Software Engineering** course (Computer Science, UNISAGRADO). React frontend and Node.js/Express backend, with JWT authentication and a libSQL (Turso) database.
 
-1. [Project Overview](#project-overview)
-2. [Features](#features)
-3. [Technologies Used](#technologies-used)
-4. [How to Use](#how-to-use)
-5. [Credits](#credits)
-6. [License](#license)
+---
 
-## Project Overview
+## 🎯 Goal
 
-**ProjScrum** was developed as part of the Applied Software Engineering course at UNISAGRADO university. Its main goal is to build a Scrum management website that makes it easier to apply agile methodologies in software development environments.
+Teams that are new to Scrum often track sprints and dailies in spreadsheets or loose boards, with no history and no defined roles. ProjScrum brings that whole cycle into one place:
 
-ProjScrum was designed for teams that want to implement Scrum practices in an efficient, organized way. The platform supports creating, managing, and tracking projects, sprints, and daily stand-ups, promoting effective collaboration among team members.
+1. create a project and define the team;
+2. plan sprints;
+3. track dailies on a **Pending → In progress → Done** board;
+4. close the sprint with a team **review**;
+5. browse the **history** and the **calendar** of goals and meetings.
 
-## Features
+The academic goal was to apply the software engineering process end to end: requirements, database modeling, client-server architecture, authentication, and role-based access.
 
-- **Project Creation and Management**: Users can create new projects, define descriptions and delivery dates, and manage the members involved. Users can view every project they are part of, making it easier to follow activities. **Note**: access to this feature can be limited by the user's role (User, Manager, Admin), so that only users with the proper permissions can create or modify projects.
+---
 
-- **Sprint and Daily Creation and Management**: Users can create sprints, which are focused work periods, and dailies, which are daily progress meetings. Goals and delivery dates can be set and activity status can be monitored. **Note**: creating and editing sprints and dailies can be restricted to Managers and Admins, ensuring tighter control over how work is organized.
+## ✨ Features
 
-- **Review of Completed Sprints**: After a sprint ends, users can evaluate the team's and the activities' performance, giving feedback on aspects such as tasks, communication, and deliverables. These reviews support continuous improvement of the development process. **Limitation**: only users with the Manager or Admin role can submit this review, so that evaluations are made by people with a broader view of the project.
+- **Accounts and authentication:** sign-up, login, and logout. Passwords are stored with **bcrypt**, and the session uses a **JWT in an `httpOnly` cookie**, valid for 24 hours.
+- **User roles:** `Usuário` (user), `Gerente` (manager), and `Admin`, with the interface adapted to the logged-in user's role.
+- **Projects:** creation with a description, due date, and members; a list of each user's projects; deletion.
+- **Sprints:** creation inside a project and lists of active and closed sprints.
+- **Kanban dailies:** each daily has a status (`Pendente`, `Em progresso`, `Concluido`, meaning pending, in progress, done) and can be **dragged between columns**, with the status saved on the backend.
+- **Sprint closing with a review:** team scores are recorded in a **database transaction**, so a sprint is never left half-closed.
+- **History** of projects, sprints, and dailies.
+- **Calendar** (FullCalendar) with event creation, editing, and deletion, and date changes by drag and drop.
+- **Account settings:** update profile data and photo, and delete the account.
 
-- **History of Projects with Their Sprints and Dailies**: The system keeps a detailed history of all projects, sprints, and dailies, letting users revisit past information and analyze progress over time. This helps identify patterns and areas for improvement. All users can access the history, but editing or deleting records can be restricted to higher roles.
+The interface is in Portuguese.
 
-- **Calendar for Tracking Goals and Meetings**: An integrated calendar lets users view and manage their goals and meetings, keeping everyone aligned on deadlines and commitments. The calendar can be synchronized with sprint and daily events.
+---
 
-## Technologies Used
+## 🏗️ Architecture
 
-- HTML/CSS
-- React
-- Node.js
-- MySQL (database modeling)
-- SQLite (remote database)
+```text
+┌──────────────────────────┐        HTTP + JWT cookie        ┌───────────────────────────┐
+│  Frontend (React + Vite) │  ─────────────────────────────► │  Backend (Node + Express) │
+│  React Router, MUI,      │                                 │  /api routes, auth        │
+│  FullCalendar, Axios     │ ◄─────────────────────────────  │  middleware, bcrypt       │
+└──────────────────────────┘             JSON                └─────────────┬─────────────┘
+                                                                           │ @libsql/client
+                                                                           ▼
+                                                              ┌───────────────────────────┐
+                                                              │  Turso (libSQL / SQLite)  │
+                                                              └───────────────────────────┘
+```
 
-## How to Use
+- **Modeling:** the database was modeled in **MySQL Workbench** (`database/MySQL/`) and implemented in **libSQL**, the SQLite fork used by Turso, hosted in the cloud (`database/SQLite/` holds a local copy).
+- **Authentication:** `authMiddleware` validates the cookie's JWT on every protected route and exposes the user's `id` and `cargo` (role) to the route handlers.
+- **CORS** is allowed only for the frontend's local origins, with `credentials: true` so the cookie is sent.
 
-### 1. Prerequisites
+---
 
-Make sure the following is installed on your machine:
+## 🛠️ Tech stack
 
-- Node.js: you can download the latest version at nodejs.org.
+**Frontend:** React 18, Vite, React Router, Material UI, Bootstrap, FullCalendar, Axios, Font Awesome
 
-### 1. Clone the Repository
+**Backend:** Node.js, Express, JSON Web Token, bcrypt, cookie-parser, express-fileupload, dotenv
 
-First, clone the ProjScrum repository. Open a terminal and run:
+**Database:** Turso (libSQL/SQLite), modeled in MySQL Workbench
+
+---
+
+## ▶️ Running it
+
+### Prerequisites
+
+- Node.js 18 or later
+- A [Turso](https://turso.tech/) database (URL and auth token)
+
+### 1. Clone
 
 ```bash
 git clone https://github.com/pedromcd/ProjScrum.git
+cd ProjScrum
 ```
 
-### 2. Install the Client Dependencies
-
-To install the frontend (client) dependencies:
-
-1. Open a terminal dedicated to the client.
-
-2. Go to the project directory:
-
-   ```bash
-   cd ProjScrum
-   ```
-
-3. Run the following command to install the dependencies:
-
-   ```bash
-   npm install
-   ```
-
-### 3. Install the Server Dependencies
-
-To install the backend (server) dependencies:
-
-1. Open a terminal dedicated to the server.
-
-2. Go to the project's server directory:
-
-   ```bash
-   cd ProjScrum/server
-   ```
-
-3. Run the following command to install the dependencies:
-
-   ```bash
-   npm install
-   ```
-
-### 4. Start the Client in Development Mode
-
-To start the frontend in development mode, run the following commands in the client terminal:
+### 2. Configure the backend
 
 ```bash
-cd ProjScrum/client
-npm run dev
+cd server
+cp credentials.example.env credentials.env
+npm install
 ```
 
-Once the client server starts, you can open the application in your browser at:
+Fill in `credentials.env`:
+
+```env
+TURSO_DATABASE_URL=libsql://your-database.turso.io
+TURSO_AUTH_TOKEN=your_token
+JWT_SECRET=a_long_random_secret
+PORT=3000
+```
+
+Create the tables in Turso from the model in `database/`.
+
+### 3. Run the backend
 
 ```bash
-http://localhost:5173
+npm start          # inside server/ — API at http://localhost:3000/api
 ```
 
-### 5. Start the Backend in Development Mode
+### 4. Run the frontend
 
-To start the backend in development mode, run the following commands in the server terminal:
+In another terminal, from the repository **root**:
 
 ```bash
-cd ProjScrum/server
-npm start
+npm install
+npm run dev        # http://localhost:5173
 ```
 
-### Note
+---
 
-Make sure both the server and the client are running at the same time so the application works correctly. The client communicates with the server for operations such as authentication, project management, and other features.
+## 🧩 Structure
 
-## Credits
+```text
+ProjScrum/
+├── client/src/
+│   ├── pages/            # Login, sign-up, home, project details, history, calendar, settings
+│   ├── components/       # Daily kanban, calendar, modals, forms, navigation
+│   └── services/api.js   # HTTP client (Axios)
+├── server/
+│   ├── app.js            # Express, CORS, cookies, routes
+│   ├── config/           # Turso connection
+│   ├── controllers/      # Users, roles, projects, events
+│   ├── middlewares/      # JWT verification
+│   ├── routes/           # API routes (projects, sprints, dailies, events)
+│   └── utils/            # Token generation
+├── database/
+│   ├── MySQL/            # Model (.mwb) and SQL script
+│   └── SQLite/           # Local copy of the database
+├── index.html, vite.config.js, package.json   # Frontend configuration
+└── LICENSE
+```
 
-Pedro Marques Correa Domingues
+---
 
-Pedro Lucas Franco
+## 💡 Takeaways
 
-Victor Hugo de Deus Machado
+- Splitting frontend and backend and connecting them securely: `httpOnly` cookies, CORS with credentials, and expiring JWTs.
+- Modeling a domain with several relationships (users ↔ projects ↔ sprints ↔ dailies ↔ reviews) and using **transactions** when one operation changes several tables.
+- Working as a team with Git, splitting screens and routes among members.
 
-Pedro Antônio de Souza Rezende
+## 🚧 Next steps
 
-Lucas Pomini Galli
+- Check the user's role on the backend for every sensitive route, not only in the interface.
+- Add versioned migrations to create the database automatically.
+- Write tests for the API.
+- Publish an online demo.
 
-Raphael Camurri Michelassi
+---
 
-## License
+## 👥 Authors
 
-This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
+Team project:
+
+- Pedro Marques Correa Domingues
+- Pedro Lucas Franco
+- Victor Hugo de Deus Machado
+- Pedro Antônio de Souza Rezende
+- Lucas Pomini Galli
+- Raphael Camurri Michelassi
+
+## 📄 License
+
+Distributed under the MIT License. See the [LICENSE](./LICENSE) file.

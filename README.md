@@ -1,138 +1,172 @@
 [English](README.en.md) | **Português**
 
-# ProjScrum
+# 📋 ProjScrum
 
-**ProjScrum** é uma plataforma web de gerenciamento Scrum, desenvolvida com o objetivo de facilitar a implementação de metodologias ágeis em equipes de desenvolvimento de software. O sistema é construído utilizando tecnologias modernas, como **React** para a interface do usuário, **Node.js** para o backend, **MySQL** para a modelagem do banco de dados, garantindo uma estrutura robusta e eficiente para o armazenamento de dados e **SQLite** para o banco de dados remoto.
+**Plataforma web para gerenciar projetos com Scrum: projetos, sprints, dailies em quadro kanban, avaliação de sprints e calendário da equipe.**
 
-## Índice
+Projeto em equipe da disciplina de **Engenharia de Software Aplicada** (Ciência da Computação — UNISAGRADO). Frontend em React e backend em Node.js/Express, com autenticação JWT e banco de dados libSQL (Turso).
 
-1. [Visão Geral do Projeto](#visão-geral-do-projeto)
-2. [Funcionalidades](#funcionalidades)
-3. [Tecnologias Utilizadas](#tecnologias-utilizadas)
-4. [Como Usar](#como-usar)
-5. [Créditos](#créditos)
-6. [Licença](#licença)
+---
 
-## Visão Geral do Projeto
+## 🎯 Objetivo
 
-**ProjScrum** é um projeto desenvolvido como parte da disciplina de Engenharia de Software Aplicada, oferecida pela Universidade Unisagrado. Este projeto tem como objetivo principal a criação de um site de gerenciamento Scrum, que facilita a aplicação de metodologias ágeis em ambientes de desenvolvimento de software.
+Equipes que estão começando com Scrum costumam controlar sprints e dailies em planilhas ou quadros soltos, sem histórico e sem papéis definidos. O ProjScrum reúne esse ciclo em um só lugar:
 
-O ProjScrum foi concebido para atender às necessidades de equipes que desejam implementar práticas de Scrum de forma eficiente e organizada. A plataforma permite a criação, gerenciamento e acompanhamento de projetos, sprints e dailys, promovendo uma colaboração eficaz entre os membros da equipe.
+1. criar um projeto e definir a equipe;
+2. planejar sprints;
+3. acompanhar as dailies em um quadro **Pendente → Em progresso → Concluído**;
+4. encerrar a sprint com uma **avaliação** da equipe;
+5. consultar o **histórico** e o **calendário** de metas e reuniões.
 
-## Funcionalidades
+O objetivo acadêmico foi aplicar o processo de engenharia de software de ponta a ponta: requisitos, modelagem do banco, arquitetura cliente-servidor, autenticação e controle de acesso por papéis.
 
-- **Criação e Gerenciamento de Projetos**: Permite aos usuários criar novos projetos, definir descrições, datas de entrega e gerenciar os membros envolvidos. Os usuários podem visualizar todos os projetos em que estão envolvidos, facilitando o acompanhamento das atividades. **Nota**: O acesso a essa funcionalidade pode ser limitado com base no cargo do usuário (Usuário, Gerente, Admin), garantindo que apenas usuários com permissões adequadas possam criar ou modificar projetos.
+---
 
-- **Criação e Gerenciamento de Sprints e Dailys**: Os usuários podem criar sprints, que são períodos de trabalho focados, e dailys, que são reuniões diárias para acompanhamento do progresso. É possível definir metas, datas de entrega e monitorar o status das atividades. **Observação**: A criação e edição de sprints e dailys podem ser restritas a Gerentes e Administradores, assegurando um controle mais rigoroso sobre a organização do trabalho.
+## ✨ Funcionalidades
 
-- **Avaliação de Sprints Finalizadas**: Após a conclusão de uma sprint, os usuários podem avaliar o desempenho da equipe e das atividades, fornecendo feedback sobre aspectos como atividades, comunicação e entregas. Essas avaliações ajudam a melhorar o processo de desenvolvimento contínuo. **Limitação**: Apenas usuários com cargos de Gerente e Admin podem realizar essa avaliação, garantindo que as análises sejam feitas por pessoas com uma visão mais ampla do projeto.
+- **Contas e autenticação:** cadastro, login e logout. A senha é armazenada com **bcrypt**, e a sessão usa **JWT em cookie `httpOnly`**, válido por 24 horas.
+- **Papéis de usuário:** `Usuário`, `Gerente` e `Admin`, com a interface adaptada ao papel de quem está logado.
+- **Projetos:** criação com descrição, data de entrega e membros; listagem dos projetos de cada usuário; exclusão.
+- **Sprints:** criação dentro de um projeto e listagem das sprints ativas e encerradas.
+- **Dailies em kanban:** cada daily tem um status (`Pendente`, `Em progresso`, `Concluido`) e pode ser **arrastada entre as colunas**, com o status salvo no backend.
+- **Encerramento de sprint com avaliação:** notas da equipe registradas em uma **transação no banco**, para que a sprint não fique finalizada pela metade.
+- **Histórico** de projetos, sprints e dailies.
+- **Calendário** (FullCalendar) com criação, edição e exclusão de eventos e mudança de data por arrastar e soltar.
+- **Configurações da conta:** atualização de dados e foto de perfil e exclusão da conta.
 
-- **Históricos com Projetos e suas Respectivas Sprints e Dailys**: O sistema mantém um histórico detalhado de todos os projetos, sprints e dailys, permitindo que os usuários revisitem informações passadas e analisem o progresso ao longo do tempo. Isso é útil para identificar padrões e áreas de melhoria. Todos os usuários têm acesso a esses históricos, mas a capacidade de editar ou excluir registros pode ser restrita a cargos superiores.
+---
 
-- **Calendário para Acompanhamento de Metas e Reuniões**: Um calendário integrado permite que os usuários visualizem e gerenciem suas metas e reuniões, garantindo que todos estejam alinhados em relação aos prazos e compromissos. O calendário pode ser sincronizado com eventos de sprints e dailys.
+## 🏗️ Arquitetura
 
-## Tecnologias Utilizadas
+```text
+┌──────────────────────────┐        HTTP + cookie JWT        ┌───────────────────────────┐
+│  Frontend (React + Vite) │  ─────────────────────────────► │  Backend (Node + Express) │
+│  React Router, MUI,      │                                 │  rotas /api, middleware   │
+│  FullCalendar, Axios     │ ◄─────────────────────────────  │  de autenticação, bcrypt  │
+└──────────────────────────┘             JSON                └─────────────┬─────────────┘
+                                                                           │ @libsql/client
+                                                                           ▼
+                                                              ┌───────────────────────────┐
+                                                              │  Turso (libSQL / SQLite)  │
+                                                              └───────────────────────────┘
+```
 
-- HTML/CSS
-- React
-- Node.js
-- MySQL (Modelagem do banco de dados)
-- SQLite (Banco de dados remoto)
+- **Modelagem:** o banco foi modelado no **MySQL Workbench** (`database/MySQL/`) e implementado em **libSQL**, a versão do SQLite usada pelo Turso, hospedada na nuvem (`database/SQLite/` tem uma cópia local).
+- **Autenticação:** `authMiddleware` valida o JWT do cookie em todas as rotas protegidas e expõe o `id` e o `cargo` do usuário para as rotas.
+- **CORS** liberado só para as origens locais do frontend, com `credentials: true` para o envio do cookie.
 
-## Como Usar
+---
 
-### 1. Pré-requisitos
+## 🛠️ Tecnologias
 
-Certifique-se de que você possui os seguintes pré-requisitos instalados em sua máquina:
+**Frontend:** React 18, Vite, React Router, Material UI, Bootstrap, FullCalendar, Axios, Font Awesome
 
-- Node.js: Você pode baixar a versão mais recente do Node.js em nodejs.org.
+**Backend:** Node.js, Express, JSON Web Token, bcrypt, cookie-parser, express-fileupload, dotenv
 
-### 1. Clone o Repositório
+**Banco de dados:** Turso (libSQL/SQLite), modelado no MySQL Workbench
 
-Primeiro, você precisa clonar o repositório do ProjScrum. Abra um terminal e execute o seguinte comando:
+---
+
+## ▶️ Como executar
+
+### Pré-requisitos
+
+- Node.js 18 ou superior
+- Um banco no [Turso](https://turso.tech/) (URL e token de acesso)
+
+### 1. Clonar
 
 ```bash
 git clone https://github.com/pedromcd/ProjScrum.git
+cd ProjScrum
 ```
 
-### 2. Instale as Dependências do Cliente
-
-Para instalar as dependências do frontend (cliente), siga os passos abaixo:
-
-1. Abra um terminal dedicado para o cliente.
-
-2. Navegue até o diretório do projeto:
-
-   ```bash
-   cd ProjScrum
-   ```
-
-3. Execute o seguinte comando para instalar as dependências:
-
-   ```bash
-   npm install
-   ```
-
-### 3. Instale as Dependências do Servidor
-
-Para instalar as dependências do backend (servidor), siga os passos abaixo:
-
-1. Abra um terminal dedicado para o servidor.
-
-2. Navegue até o diretório do servidor do projeto:
-
-   ```bash
-   cd ProjScrum/server
-   ```
-
-3. Execute o seguinte comando para instalar as dependências:
-
-   ```bash
-   npm install
-   ```
-
-### 4. Inicie o Servidor do Cliente no Modo de Desenvolvimento
-
-Para iniciar a aplicação frontend no modo de desenvolvimento, execute os seguintes comandos no terminal dedicado ao cliente:
+### 2. Configurar o backend
 
 ```bash
-cd ProjScrum/client
-npm run dev
+cd server
+cp credentials.example.env credentials.env
+npm install
 ```
 
-Após executar este comando, o servidor do cliente será iniciado e você poderá acessar a aplicação no navegador em:
+Preencha o `credentials.env`:
+
+```env
+TURSO_DATABASE_URL=libsql://seu-banco.turso.io
+TURSO_AUTH_TOKEN=seu_token
+JWT_SECRET=uma_chave_longa_e_aleatoria
+PORT=3000
+```
+
+Crie as tabelas no Turso a partir do modelo em `database/`.
+
+### 3. Rodar o backend
 
 ```bash
-http://localhost:5173
+npm start          # dentro de server/ — API em http://localhost:3000/api
 ```
 
-### 5. Inicie o Servidor do Backend no Modo de Desenvolvimento
+### 4. Rodar o frontend
 
-Para iniciar a aplicação backend no modo de desenvolvimento, execute os seguintes comandos no terminal dedicado ao servidor:
+Em outro terminal, na **raiz** do repositório:
 
 ```bash
-cd ProjScrum/server
-npm start
+npm install
+npm run dev        # http://localhost:5173
 ```
 
-### Observação
+---
 
-Certifique-se de que tanto o servidor quanto o cliente estejam rodando simultaneamente para garantir que a aplicação funcione corretamente. O cliente se comunicará com o servidor para realizar operações como autenticação, gerenciamento de projetos e outras funcionalidades.
+## 🧩 Estrutura
 
-## Créditos
+```text
+ProjScrum/
+├── client/src/
+│   ├── pages/            # Login, Cadastro, Home, DetalhesProjeto, Histórico, Calendário, Configurações
+│   ├── components/       # Kanban de dailies, calendário, modais, formulários, navegação
+│   └── services/api.js   # Cliente HTTP (Axios)
+├── server/
+│   ├── app.js            # Express, CORS, cookies, rotas
+│   ├── config/           # Conexão com o Turso
+│   ├── controllers/      # Usuários, papéis, projetos, eventos
+│   ├── middlewares/      # Verificação do JWT
+│   ├── routes/           # Rotas da API (projetos, sprints, dailies, eventos)
+│   └── utils/            # Geração de token
+├── database/
+│   ├── MySQL/            # Modelo (.mwb) e script SQL
+│   └── SQLite/           # Cópia local do banco
+├── index.html, vite.config.js, package.json   # Configuração do frontend
+└── LICENSE
+```
 
-Pedro Marques Correa Domingues
+---
 
-Pedro Lucas Franco
+## 💡 Aprendizados
 
-Victor Hugo de Deus Machado
+- Separar frontend e backend e fazer os dois conversarem com segurança: cookie `httpOnly`, CORS com credenciais e JWT com expiração.
+- Modelar um domínio com várias relações (usuários ↔ projetos ↔ sprints ↔ dailies ↔ avaliações) e usar **transações** quando uma operação altera várias tabelas.
+- Trabalhar em equipe com Git, dividindo telas e rotas entre os integrantes.
 
-Pedro Antônio de Souza Rezende
+## 🚧 Próximos passos
 
-Lucas Pomini Galli
+- Verificar o papel do usuário também no backend em todas as rotas sensíveis, não só na interface.
+- Adicionar migrations versionadas para criar o banco automaticamente.
+- Escrever testes para a API.
+- Publicar uma demo online.
 
-Raphael Camurri Michelassi
+---
 
-## Licença
+## 👥 Autores
 
-Este projeto é licenciado sob a licença MIT. Consulte o arquivo [LICENSE](./LICENSE) para mais detalhes.
+Projeto em equipe:
+
+- Pedro Marques Correa Domingues
+- Pedro Lucas Franco
+- Victor Hugo de Deus Machado
+- Pedro Antônio de Souza Rezende
+- Lucas Pomini Galli
+- Raphael Camurri Michelassi
+
+## 📄 Licença
+
+Distribuído sob a licença MIT. Veja o arquivo [LICENSE](./LICENSE).
